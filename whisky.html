@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Whiskys · GLOBAL IMPORTADOS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="whisky.css" />
+</head>
+<body>
+
+  <!-- ====== NAV ====== -->
+  <nav>
+    <a href="#" class="nav-logo">RESERVA GLOBAL IMPORTADOS</a>
+    <ul class="nav-links">
+      <li><a href="index.html">Inicio</a></li>
+      <li><a href="#envios">Envíos</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="btn-cart" onclick="toggleCart()">
+        🛒 Carrito
+        <span class="cart-count" id="cartCount">0</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ====== HERO ====== -->
+  <section class="hero" id="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="hero-tag">🥃 Whisky · Envíos a todo el país</div>
+    <h1>
+      <span class="accent">WHISKY</span>
+      <span>PARA</span>
+      <span class="under">EXIGENTES</span>
+    </h1>
+    <p class="hero-sub">Las mejores etiquetas de Escocia, Japón, USA, Argentina y más. Desde blends hasta single malt de colección.</p>
+    <div class="hero-actions">
+      <a href="#productos" class="btn-primary">Ver todos 🥃</a>
+      <a href="#envios" class="btn-outline">¿Cómo llega?</a>
+    </div>
+  </section>
+
+  <!-- ====== SHIPPING BAR ====== -->
+  <div class="shipping-bar">
+    <div class="ship-item">📦 Envío express disponible</div>
+    <div class="ship-item">💳 Cuotas</div>
+  </div>
+
+  <!-- ====== PRODUCTOS + FILTRO LATERAL ====== -->
+  <div class="products-section" id="productos">
+    <div class="products-layout">
+
+      <!-- FILTRO LATERAL -->
+      <aside class="filter-sidebar">
+        <h3>Filtros</h3>
+
+        <!-- BUSCADOR -->
+        <div class="filter-group">
+          <h4>Buscar</h4>
+          <input type="text" id="searchInput" class="search-input" placeholder="Ej: Jack Daniel's, Macallan..." oninput="applyFilters()" />
+        </div>
+
+        <!-- MARCA -->
+        <div class="filter-group">
+          <h4>Marca</h4>
+          <div id="brandFilter" class="filter-options"></div>
+          <button class="btn-show-more" id="brandShowMore" onclick="toggleBrands()">Ver más</button>
+        </div>
+
+        <!-- TAMAÑO -->
+        <div class="filter-group">
+          <h4>Tamaño</h4>
+          <div id="sizeFilter" class="filter-options"></div>
+          <button class="btn-show-more" id="sizeShowMore" onclick="toggleSizes()">Ver más</button>
+        </div>
+
+        <button class="btn-filter-reset" onclick="resetFilters()">Quitar filtros</button>
+      </aside>
+
+      <!-- PRODUCTOS MAIN -->
+      <div class="products-main">
+        <div class="products-header">
+          <div>
+            <div class="section-label">Nuestros Whiskys</div>
+            <h2 class="section-title">CATÁLOGO</h2>
+          </div>
+          <div class="filter-tabs" id="filterTabs">
+            <button class="tab active" onclick="sortProducts('destacados')">Destacados</button>
+            <button class="tab" onclick="sortProducts('precio-menor')">Precio ↑</button>
+            <button class="tab" onclick="sortProducts('precio-mayor')">Precio ↓</button>
+          </div>
+        </div>
+
+        <!-- CONTADOR DE PRODUCTOS -->
+        <div class="products-counter" id="productsCounter">Mostrando 0 productos</div>
+
+        <div class="products-grid" id="productsGrid"></div>
+
+        <!-- PAGINACIÓN -->
+        <div class="pagination" id="pagination">
+          <button class="page-btn" id="prevPage" onclick="changePage(-1)">‹ Anterior</button>
+          <span class="page-info" id="pageInfo">Página 1 de 1</span>
+          <button class="page-btn" id="nextPage" onclick="changePage(1)">Siguiente ›</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ====== ENVÍOS ====== -->
+  <div class="shipping-section" id="envios">
+    <div class="shipping-inner">
+      <div class="section-label">Llegamos a toda Argentina</div>
+      <h2 class="section-title">CÓMO FUNCIONA<br />EL ENVÍO</h2>
+      <p class="section-description">Entrega a cualquier dirección. Retirá en sucursal o recibilo en tu puerta.</p>
+      <div class="ship-grid">
+        <div class="ship-card"><div class="ship-icon">🛒</div><h3>1. Elegí</h3><p>Sin mínimo de unidades.</p></div>
+        <div class="ship-card"><div class="ship-icon">💳</div><h3>2. Pagá</h3><p>Tarjeta, transferencia o Mercado Pago.</p></div>
+        <div class="ship-card"><div class="ship-icon">📦</div><h3>3. Preparamos</h3><p>Embalaje anti-golpes.</p></div>
+        <div class="ship-card"><div class="ship-icon">🚚</div><h3>4. Recibís</h3><p>Puerta a puerta o sucursal.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== FOOTER ====== -->
+  <footer id="contacto">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="nav-logo">GLOBAL IMPORTADOS</div>
+          <p>Whisky, vinos, espumantes y más. Envíos a todo el país.</p>
+          <div class="social-links">
+            <a class="social-btn" href="#">📘</a>
+            <a class="social-btn" href="#">📸</a>
+            <a class="social-btn" href="#">💬</a>
+          </div>
+        </div>
+        <div class="footer-col"><h4>Categorías</h4><ul><li><a href="#">Whisky</a></li><li><a href="#">Vinos</a></li><li><a href="#">Espumantes</a></li><li><a href="#">Gin</a></li></ul></div>
+        <div class="footer-col"><h4>Ayuda</h4><ul><li><a href="#">¿Cómo comprar?</a></li><li><a href="#">Seguimiento</a></li><li><a href="#">Contacto</a></li></ul></div>
+        <div class="footer-col"><h4>Legal</h4><ul><li><a href="#">Términos</a></li><li><a href="#">Privacidad</a></li></ul></div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2025 GLOBAL IMPORTADOS · Venta de alcohol prohibida a menores de 18 años 🔞</p>
+        <div class="payment-icons">
+          <span class="pay-badge">Visa</span>
+          <span class="pay-badge">Mastercard</span>
+          <span class="pay-badge">Mercado Pago</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ====== CARRITO ====== -->
+  <div class="overlay" id="overlay" onclick="toggleCart()"></div>
+  <div class="cart-drawer" id="cartDrawer">
+    <div class="cart-head"><h3>Tu pedido 🛒</h3><button class="btn-close" onclick="toggleCart()">✕</button></div>
+    <div class="cart-items" id="cartItems"><div class="cart-empty"><div class="empty-icon">🍺</div><p>Todavía no agregaste nada</p></div></div>
+    <div class="cart-footer">
+      <div class="cart-total"><span>Total estimado</span><strong id="cartTotal">$0</strong></div>
+      <button class="btn-checkout" id="checkoutBtn" disabled>Finalizar pedido →</button>
+    </div>
+  </div>
+
+  <<a class="whatsapp-float" href="https://wa.me/5492995000000" target="_blank" title="Consultas por WhatsApp" aria-label="Consultas por WhatsApp">
+    <svg viewBox="0 0 32 32" aria-hidden="true" role="img">
+      <circle cx="16" cy="16" r="15" fill="#25D366"/>
+      <path fill="#fff" d="M23.35 8.6A10.35 10.35 0 0 0 16 5.55c-5.73 0-10.4 4.66-10.4 10.4 0 1.83.48 3.62 1.39 5.2L5.52 26.4l5.37-1.41a10.4 10.4 0 0 0 5.1 1.34h.01c5.73 0 10.4-4.67 10.4-10.4 0-2.78-1.08-5.39-3.05-7.33Zm-7.35 15.98h-.01a8.63 8.63 0 0 1-4.4-1.2l-.32-.19-3.19.84.85-3.11-.21-.32a8.62 8.62 0 1 1 7.28 3.98Zm4.73-6.46c-.26-.13-1.53-.76-1.77-.85-.24-.09-.41-.13-.58.13-.17.26-.66.85-.81 1.03-.15.17-.3.2-.56.07-.26-.13-1.07-.39-2.04-1.24-.75-.67-1.25-1.5-1.4-1.76-.15-.26-.02-.4.11-.53.12-.12.26-.3.39-.45.13-.15.17-.26.26-.43.09-.17.04-.32-.02-.45-.06-.13-.58-1.4-.8-1.92-.21-.5-.42-.43-.58-.44h-.49c-.17 0-.45.06-.69.32-.24.26-.9.88-.9 2.15s.92 2.49 1.05 2.66c.13.17 1.81 2.76 4.39 3.87.61.26 1.09.42 1.46.54.61.19 1.17.16 1.61.1.49-.07 1.53-.63 1.75-1.23.22-.6.22-1.11.15-1.23-.06-.11-.24-.17-.5-.3Z"/>
+    </svg>
+  </a>
+
+  <script src="whisky.js"></script>
+</body>
+</html>
