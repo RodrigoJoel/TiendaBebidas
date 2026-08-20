@@ -25,13 +25,13 @@ function formatPrice(n) {
 function cargarProductos(productos) {
   PRODUCTS = productos
     .filter(p => p.active !== false)
-    .filter(p => (p.category ?? p.cat) === 'Whisky')
+    .filter(p => (p.category ?? p.cat) === 'Aguardiente')
     .map(p => ({
       ...p,
       id: p.id,
       name: p.name ?? 'Producto sin nombre',
       brand: p.brand ?? '',
-      cat: p.category ?? p.cat ?? 'Whisky',
+      cat: p.category ?? p.cat ?? 'Aguardiente',
       price: Number(p.price ?? 0),
       size: p.size ?? '',
       emoji: p.emoji ?? '🥃',
@@ -52,7 +52,7 @@ function mostrarErrorFirebase() {
   if (grid) {
     grid.innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted);">
-        No se pudieron cargar los whiskys. Revisá la conexión con Firebase.
+        No se pudieron cargar los aguardientes. Revisá la conexión con Firebase.
       </div>`;
   }
 }

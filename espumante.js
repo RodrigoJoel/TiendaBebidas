@@ -25,16 +25,16 @@ function formatPrice(n) {
 function cargarProductos(productos) {
   PRODUCTS = productos
     .filter(p => p.active !== false)
-    .filter(p => (p.category ?? p.cat) === 'Whisky')
+    .filter(p => (p.category ?? p.cat) === 'Espumante')
     .map(p => ({
       ...p,
       id: p.id,
       name: p.name ?? 'Producto sin nombre',
       brand: p.brand ?? '',
-      cat: p.category ?? p.cat ?? 'Whisky',
+      cat: p.category ?? p.cat ?? 'Espumante',
       price: Number(p.price ?? 0),
       size: p.size ?? '',
-      emoji: p.emoji ?? '🥃',
+      emoji: p.emoji ?? '🍾',
       badge: p.badge ?? null,
       image: p.image ?? null,
       description: p.description ?? p.descripcion ?? ''
@@ -52,7 +52,7 @@ function mostrarErrorFirebase() {
   if (grid) {
     grid.innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted);">
-        No se pudieron cargar los whiskys. Revisá la conexión con Firebase.
+        No se pudieron cargar los espumantes. Revisá la conexión con Firebase.
       </div>`;
   }
 }
@@ -368,7 +368,7 @@ function renderCartItems() {
   const items = Object.values(cart);
 
   if (!items.length) {
-    el.innerHTML = `<div class="cart-empty"><div class="empty-icon">🥃</div><p>Todavía no agregaste nada</p></div>`;
+    el.innerHTML = `<div class="cart-empty"><div class="empty-icon">🍾</div><p>Todavía no agregaste nada</p></div>`;
     return;
   }
 

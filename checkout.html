@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finalizar compra · GLOBAL IMPORTADOS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="checkout.css" />
+</head>
+<body>
+
+  <!-- ====== NAV ====== -->
+  <nav>
+    <a href="index.html" class="nav-logo">RESERVA GLOBAL IMPORTADOS</a>
+    <div class="nav-secure">🔒 Compra segura</div>
+  </nav>
+
+  <div class="checkout-page">
+
+    <!-- ====== PASOS ====== -->
+    <div class="steps-bar" id="stepsBar">
+      <div class="step-item active" id="stepIndicator1">
+        <div class="step-num">1</div>
+        <span>Tus datos</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step-item" id="stepIndicator2">
+        <div class="step-num">2</div>
+        <span>Pago</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step-item" id="stepIndicator3">
+        <div class="step-num">3</div>
+        <span>Confirmación</span>
+      </div>
+    </div>
+
+    <div class="checkout-layout">
+
+      <!-- ====== COLUMNA PRINCIPAL ====== -->
+      <div class="checkout-main">
+
+        <!-- PASO 1: DATOS DEL CLIENTE -->
+        <section class="checkout-step active" id="step1">
+          <h2 class="step-title">Datos de envío y contacto</h2>
+          <p class="step-sub">Hacemos envíos a todo el país. Completá estos datos para coordinar la entrega.</p>
+
+          <form id="datosForm" onsubmit="return irAPago(event)">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="fNombre">Nombre completo *</label>
+                <input type="text" id="fNombre" class="form-input" placeholder="Ej: María González" required />
+              </div>
+              <div class="form-group">
+                <label for="fDni">DNI *</label>
+                <input type="text" id="fDni" class="form-input" placeholder="Ej: 30123456" inputmode="numeric" pattern="[0-9]{7,9}" title="Ingresá tu DNI sin puntos, entre 7 y 9 dígitos" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="fDireccion">Dirección (calle y altura) *</label>
+              <input type="text" id="fDireccion" class="form-input" placeholder="Ej: Av. San Martín 1234" required />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="fCiudad">Ciudad *</label>
+                <input type="text" id="fCiudad" class="form-input" placeholder="Ej: Resistencia" required />
+              </div>
+              <div class="form-group">
+                <label for="fProvincia">Provincia *</label>
+                <select id="fProvincia" class="form-input" required>
+                  <option value="" disabled selected>Elegí tu provincia</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="fEmail">Email *</label>
+                <input type="email" id="fEmail" class="form-input" placeholder="tu@mail.com" required />
+              </div>
+              <div class="form-group">
+                <label for="fCelular">Celular *</label>
+                <input type="tel" id="fCelular" class="form-input" placeholder="Ej: 11 2345 6789" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="fMensaje">Mensaje adicional (opcional)</label>
+              <textarea id="fMensaje" class="form-input" rows="2" placeholder="Ej: dejar en portería, entregar por la tarde..."></textarea>
+            </div>
+
+            <button type="submit" class="btn-primary btn-full">Siguiente: Medios de pago →</button>
+          </form>
+        </section>
+
+        <!-- PASO 2: PAGO -->
+        <section class="checkout-step" id="step2">
+          <h2 class="step-title">Medios de pago</h2>
+          <p class="step-sub">Elegí cómo pagar. Vas a completar el pago en el entorno seguro de Mercado Pago.</p>
+
+          <div class="payment-methods">
+            <div class="payment-option selected" data-method="mp">
+              <img class="pay-logo" alt="Mercado Pago" src="https://http2.mlstatic.com/frontend-assets/mp-web-navigation/ui-navigation/6.6.20/mercadopago/logo__large@2x.png" />
+              <div>
+                <strong>Mercado Pago</strong>
+                <span>Tarjetas de crédito y débito, cuotas, dinero en cuenta, Rapipago/Pago Fácil</span>
+              </div>
+              <div class="payment-check">✓</div>
+            </div>
+          </div>
+
+          <div class="payment-cards-strip">
+            <span class="pay-badge">Visa</span>
+            <span class="pay-badge">Mastercard</span>
+            <span class="pay-badge">Amex</span>
+            <span class="pay-badge">Cuotas sin interés</span>
+          </div>
+
+          <div class="order-summary">
+            <h3>Resumen de tu pedido</h3>
+            <div id="summaryItems"></div>
+            <div class="summary-row"><span>Subtotal</span><span id="summarySubtotal">$0</span></div>
+            <div class="summary-row"><span>Envío a todo el país</span><span id="summaryShipping">$0</span></div>
+            <div class="summary-row summary-total"><span>Total</span><span id="summaryTotal">$0</span></div>
+          </div>
+
+          <div class="step-actions">
+            <button type="button" class="btn-outline" onclick="volverAPasoUno()">← Volver</button>
+            <button type="button" class="btn-primary" onclick="pagarConMercadoPago()">Pagar con Mercado Pago 🔒</button>
+          </div>
+        </section>
+
+        <!-- PASO 3: CONFIRMACIÓN -->
+        <section class="checkout-step" id="step3">
+          <div class="confirmation">
+            <div class="confirmation-icon">✅</div>
+            <h2>¡Pedido realizado con éxito!</h2>
+            <p class="order-number">Pedido N° <strong id="orderNumber">—</strong></p>
+            <p class="confirmation-text">
+              Te enviamos un mail a <strong id="confirmEmail">—</strong> con el detalle de tu compra y los pasos a seguir.
+            </p>
+            <p class="confirmation-note">Guardá el número de pedido por cualquier consulta sobre tu envío.</p>
+            <a href="index.html" class="btn-primary">Volver a la tienda</a>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- ====== COLUMNA LATERAL: RESUMEN FIJO ====== -->
+      <aside class="checkout-side" id="checkoutSide">
+        <h3>Tu pedido</h3>
+        <div id="sideItems"></div>
+        <div class="summary-row"><span>Subtotal</span><span id="sideSubtotal">$0</span></div>
+        <div class="summary-row"><span>Envío</span><span id="sideShipping">$0</span></div>
+        <div class="summary-row summary-total"><span>Total</span><span id="sideTotal">$0</span></div>
+      </aside>
+
+    </div>
+  </div>
+
+  <script type="module" src="checkout.js"></script>
+</body>
+</html>
