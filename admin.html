@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reserva Global Importados - Panel de Administración</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css?v=1">
+</head>
+<body>
+<div id="adminLoading">
+  <div class="al-logo">GLOBAL<span>IMPORTADOS</span></div>
+  <div class="al-bar"><div class="al-bar-inner"></div></div>
+  <div class="al-text">CONECTANDO CON FIREBASE...</div>
+</div>
+
+<header class="topbar">
+  <div class="logo">
+    <div class="logo-mark">🍾</div>
+    <div class="logo-name">GLOBAL<span>IMPORTADOS</span></div>
+    <span class="logo-badge">ADMIN</span>
+  </div>
+  <div class="topbar-right">
+    <div id="savingBadge">⚡ Guardando...</div>
+    <a href="index.html" class="back-btn">← Volver al sitio</a>
+    <div class="admin-user" onclick="toggleAdminMenu()">
+      <div class="admin-avatar">👤</div>
+      <span id="adminUserLabel">Administrador</span>
+      <div id="adminDropdown" class="admin-dropdown">
+        <button onclick="logoutAdmin()">🚪 Cerrar sesión</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sidebar-section">General</div>
+    <div class="nav-item active" onclick="navigate('dashboard',this)"><span class="nav-icon">📊</span><span>Dashboard</span></div>
+    <div class="nav-divider"></div>
+
+    <div class="sidebar-section">Catálogo</div>
+    <div class="nav-item" onclick="navigate('Whisky',this)"><span class="nav-icon">🥃</span><span>Whisky</span></div>
+    <div class="nav-item" onclick="navigate('Ron',this)"><span class="nav-icon">🍹</span><span>Ron</span></div>
+    <div class="nav-item" onclick="navigate('Vodka',this)"><span class="nav-icon">🍸</span><span>Vodka</span></div>
+    <div class="nav-item" onclick="navigate('Tequila',this)"><span class="nav-icon">🌵</span><span>Tequila</span></div>
+    <div class="nav-item" onclick="navigate('Gin',this)"><span class="nav-icon">🍈</span><span>Gin</span></div>
+    <div class="nav-item" onclick="navigate('Aguardiente',this)"><span class="nav-icon">🥃</span><span>Aguardiente</span></div>
+    <div class="nav-item" onclick="navigate('Espumante',this)"><span class="nav-icon">🍾</span><span>Espumante</span></div>
+    <div class="nav-item" onclick="navigate('Cerveza',this)"><span class="nav-icon">🍺</span><span>Cerveza</span></div>
+    <div class="nav-item" onclick="navigate('Vino',this)"><span class="nav-icon">🍷</span><span>Vino</span></div>
+    <div class="nav-item" onclick="navigate('Energizante',this)"><span class="nav-icon">⚡</span><span>Energizante</span></div>
+    <div class="nav-item" onclick="navigate('Combos',this)"><span class="nav-icon">📦</span><span>Combos</span></div>
+    <div class="nav-divider"></div>
+
+    <div class="sidebar-section">Todo el catálogo</div>
+    <div class="nav-item" onclick="navigate('todos',this)"><span class="nav-icon">🗂️</span><span>Todos los productos</span></div>
+
+    <div class="sidebar-footer">
+      <p>Reserva Global Importados<br>Admin v1.0 · Firebase conectado ✅</p>
+    </div>
+  </nav>
+
+  <main class="main" id="mainContent"></main>
+</div>
+
+<div class="modal-back hidden" id="productModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeProductModal()">✕</button>
+    <div class="modal-title" id="productModalTitle">EDITAR <span style="color:var(--citrus)">PRODUCTO</span></div>
+    <input type="hidden" id="pmDocId"/>
+
+    <div class="field-row">
+      <div class="field"><label>Nombre</label><input id="pmName" placeholder="Ej: Jack Daniel's Honey"/></div>
+      <div class="field"><label>Categoría</label>
+        <select id="pmCategory">
+          <option value="Whisky">🥃 Whisky</option>
+          <option value="Ron">🍹 Ron</option>
+          <option value="Vodka">🍸 Vodka</option>
+          <option value="Tequila">🌵 Tequila</option>
+          <option value="Gin">🍈 Gin</option>
+          <option value="Aguardiente">🥃 Aguardiente</option>
+          <option value="Espumante">🍾 Espumante</option>
+          <option value="Cerveza">🍺 Cerveza</option>
+          <option value="Vino">🍷 Vino</option>
+          <option value="Energizante">⚡ Energizante</option>
+          <option value="Combos">📦 Combos</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field"><label>Marca</label><input id="pmBrand" list="pmBrandList" placeholder="Ej: Jack Daniel's"/><datalist id="pmBrandList"></datalist></div>
+      <div class="field"><label>Tamaño</label><input id="pmSize" list="pmSizeList" placeholder="Ej: 750 cc"/><datalist id="pmSizeList"></datalist></div>
+    </div>
+
+    <div class="field-row3">
+      <div class="field"><label>Precio ($)</label><input id="pmPrice" type="number" min="0"/></div>
+      <div class="field"><label>Precio tachado ($)</label><input id="pmOld" type="number" min="0" placeholder="0 = sin tachado"/></div>
+      <div class="field"><label>Stock (uds.)</label><input id="pmStock" type="number" min="0" placeholder="Vacío = ilimitado"/></div>
+    </div>
+
+    <div class="field-row">
+      <div class="field"><label>Badge</label><input id="pmBadge" list="pmBadgeList" placeholder="Ej: NEW, Oferta..."/>
+        <datalist id="pmBadgeList">
+          <option value="NEW"></option>
+          <option value="Oferta"></option>
+          <option value="Premium"></option>
+          <option value="Hot"></option>
+          <option value="Últimas unidades"></option>
+        </datalist>
+      </div>
+      <div class="field"><label>Emoji (respaldo sin imagen)</label><input id="pmEmoji" placeholder="🥃"/></div>
+    </div>
+
+    <div class="field">
+      <label>URL imagen</label>
+      <input id="pmImg" placeholder="https://..." oninput="previewImg('pmImg','pmImgPrev')"/>
+      <div class="img-preview-wrap"><div class="img-preview" id="pmImgPrev"><span>Vista previa</span></div></div>
+    </div>
+
+    <div class="field"><label>Descripción</label><textarea id="pmDesc" placeholder="Descripción que se ve en la ficha del producto..."></textarea></div>
+
+    <div class="field-row">
+      <div class="field"><label>Orden</label><input id="pmOrder" type="number" min="0" value="0"/></div>
+      <div class="field" style="display:flex;align-items:flex-end">
+        <label class="field-check" style="margin-bottom:10px"><input type="checkbox" id="pmActive" checked/> Visible en el sitio</label>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveProductModal()">💾 Guardar cambios</button>
+      <button class="btn btn-ghost" onclick="closeProductModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
+import { getFirestore, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDRKn7CkbwblMLohJjq7oIE73vXiWlrB70",
+  authDomain: "globalimportados-ec4cb.firebaseapp.com",
+  databaseURL: "https://globalimportados-ec4cb-default-rtdb.firebaseio.com",
+  projectId: "globalimportados-ec4cb",
+  storageBucket: "globalimportados-ec4cb.firebasestorage.app",
+  messagingSenderId: "892432100057",
+  appId: "1:892432100057:web:916150059c02a7363a6cc8"
+};
+
+const ADMIN_EMAILS = ['rodrigoatatat@gmail.com'];
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+const auth = getAuth(fbApp);
+
+window.auth = auth;
+window.db = db;
+window.fsDoc = doc;
+window.fsCollection = collection;
+window.fsSetDoc = setDoc;
+window.fsAddDoc = addDoc;
+window.fsDeleteDoc = deleteDoc;
+window.fsUpdateDoc = updateDoc;
+window.fsGetDocs = getDocs;
+window.fsOnSnapshot = onSnapshot;
+
+window.toggleAdminMenu = function () {
+  document.getElementById("adminDropdown").classList.toggle("show");
+};
+
+window.addEventListener("click", function (e) {
+  if (!e.target.closest(".admin-user")) {
+    document.getElementById("adminDropdown")?.classList.remove("show");
+  }
+});
+
+window.logoutAdmin = async function () {
+  try {
+    await signOut(auth);
+    localStorage.removeItem("gi_admin_session_token");
+    localStorage.removeItem("gi_admin_session_expiry");
+    localStorage.removeItem("gi_admin_session_hash");
+    window.location.href = "admin-login.html";
+  } catch (error) {
+    alert("Error al cerrar sesión");
+    console.error(error);
+  }
+};
+
+window.DATA = { productos: [] };
+window.currentPage = "dashboard";
+
+function setupRealtimeListener() {
+  onSnapshot(collection(db, "productos"), (snap) => {
+    window.DATA.productos = snap.docs.map((d) => ({ docId: d.id, ...d.data() }));
+    if (typeof window.render === "function") window.render(window.currentPage);
+  });
+}
+
+async function boot() {
+  setupRealtimeListener();
+  document.getElementById("adminLoading").classList.add("fade");
+  setTimeout(() => document.getElementById("adminLoading")?.remove(), 500);
+  render("dashboard");
+}
+
+onAuthStateChanged(auth, (user) => {
+  if (!user || !ADMIN_EMAILS.includes(user.email)) {
+    window.location.href = "admin-login.html";
+  } else {
+    const label = document.getElementById("adminUserLabel");
+    if (label) label.textContent = user.email.split("@")[0];
+    boot();
+  }
+});
+</script>
+
+<script src="admin-script.js?v=1"></script>
+</body>
+</html>

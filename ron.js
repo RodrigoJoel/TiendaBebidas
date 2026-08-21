@@ -36,6 +36,8 @@ function cargarProductos(productos) {
       size: p.size ?? '',
       emoji: p.emoji ?? '🍹',
       badge: p.badge ?? null,
+      oldPrice: Number(p.oldPrice ?? 0) || null,
+      stock: p.stock ?? null,
       image: p.image ?? null,
       description: p.description ?? p.descripcion ?? ''
     }))
@@ -234,7 +236,9 @@ function renderProducts(items) {
     return;
   }
 
-  grid.innerHTML = items.map(p => `
+  grid.innerHTML = items.map(p => {
+    const sinStock = p.stock !== null && p.stock !== undefined && Number(p.stock) <= 0;
+    return `
     <div class="prod-card" onclick="openProductModal('${p.id}')">
       <div class="prod-img">
         ${p.badge ? `<div class="prod-badge${p.badge === 'NEW' ? ' new' : ''}">${p.badge}</div>` : ''}
@@ -246,12 +250,16 @@ function renderProducts(items) {
         <div class="prod-name">${p.name}</div>
         <div class="prod-brand">${p.brand}${p.size ? ` · ${p.size}` : ''}</div>
         <div class="prod-bottom">
-          <div><span class="prod-price">${formatPrice(p.price)}</span></div>
-          <button class="btn-add" id="btn-${p.id}" onclick="event.stopPropagation(); addToCart('${p.id}')">+</button>
+          <div>
+            <span class="prod-price">${formatPrice(p.price)}</span>
+            ${p.oldPrice ? `<span class="prod-price-old" style="margin-left:.4rem">${formatPrice(p.oldPrice)}</span>` : ''}
+          </div>
+          <button class="btn-add" id="btn-${p.id}" ${sinStock ? 'disabled' : ''} onclick="event.stopPropagation(); addToCart('${p.id}')" style="${sinStock ? 'opacity:.4;cursor:not-allowed' : ''}">${sinStock ? '✕' : '+'}</button>
         </div>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 // ============================================================
@@ -267,6 +275,8 @@ function openProductModal(id) {
   const body = document.getElementById('productModalBody');
   if (!body) return;
 
+  const sinStock = prod.stock !== null && prod.stock !== undefined && Number(prod.stock) <= 0;
+
   body.innerHTML = `
     <div class="modal-img">
       ${prod.badge ? `<div class="prod-badge${prod.badge === 'NEW' ? ' new' : ''}">${prod.badge}</div>` : ''}
@@ -279,12 +289,13 @@ function openProductModal(id) {
       <h2 class="modal-name">${prod.name}</h2>
       <div class="modal-size">${prod.size || ''}</div>
       <p class="modal-description">${prod.description || 'Sin descripción disponible por el momento.'}</p>
+      ${sinStock ? `<p style="color:#ff6b6b;font-weight:600;font-size:.85rem;margin-top:.5rem">Sin stock disponible</p>` : ''}
       <div class="modal-bottom">
         <div>
           <span class="prod-price">${formatPrice(prod.price)}</span>
-          ${prod.old ? `<span class="prod-price-old">${formatPrice(prod.old)}</span>` : ''}
+          ${prod.oldPrice ? `<span class="prod-price-old">${formatPrice(prod.oldPrice)}</span>` : ''}
         </div>
-        <button class="btn-primary" id="modalAddBtn" onclick="addToCartFromModal('${prod.id}')">Agregar al carrito 🛒</button>
+        <button class="btn-primary" id="modalAddBtn" ${sinStock ? 'disabled' : ''} style="${sinStock ? 'opacity:.5;cursor:not-allowed' : ''}" onclick="addToCartFromModal('${prod.id}')">${sinStock ? 'Sin stock' : 'Agregar al carrito 🛒'}</button>
       </div>
     </div>
   `;
@@ -330,6 +341,10 @@ function addToCart(id) {
   const prod = PRODUCTS.find(p => String(p.id) === String(id));
   if (!prod) return;
 
+  const unlimited = prod.stock === null || prod.stock === undefined;
+  const currentQty = cart[id] ? cart[id].qty : 0;
+  if (!unlimited && currentQty >= Number(prod.stock)) return;
+
   cart[id] = cart[id]
     ? { ...cart[id], qty: cart[id].qty + 1 }
     : { ...prod, qty: 1 };
@@ -349,6 +364,11 @@ function addToCart(id) {
 
 function changeQty(id, delta) {
   if (!cart[id]) return;
+  if (delta > 0) {
+    const prod = PRODUCTS.find(p => String(p.id) === String(id));
+    const unlimited = !prod || prod.stock === null || prod.stock === undefined;
+    if (!unlimited && cart[id].qty >= Number(prod.stock)) return;
+  }
   cart[id].qty += delta;
   if (cart[id].qty <= 0) delete cart[id];
   updateCart();

@@ -1,0 +1,262 @@
+/* ============================================================
+   ADMIN LOGIN — Reserva Global Importados
+   ============================================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --ice: #E8F4FD;
+  --sky: #B8DFFE;
+  --blue: #1A6FBF;
+  --deep: #0A3560;
+  --citrus: #F5A623;
+  --lime: #2ECC71;
+  --danger: #ff5f6d;
+  --dark: #080F1A;
+  --mid: #10192A;
+  --card: #101B2C;
+  --text: #E8EFF8;
+  --muted: #7A97B8;
+  --border: rgba(255, 255, 255, 0.08);
+}
+
+html, body { height: 100%; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--dark);
+  color: var(--text);
+}
+
+.login-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+.login-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 55% 45% at 15% 20%, rgba(26, 111, 191, 0.22) 0%, transparent 70%),
+    radial-gradient(ellipse 45% 40% at 85% 80%, rgba(245, 166, 35, 0.10) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.login-container {
+  display: flex;
+  width: 100%;
+  max-width: 980px;
+  min-height: 600px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+  position: relative;
+  z-index: 1;
+}
+
+/* ── LEFT: FORM ── */
+.login-card {
+  flex: 1 1 50%;
+  padding: 3.2rem 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.login-header { text-align: center; margin-bottom: 2rem; }
+.avatar-icon {
+  width: 64px; height: 64px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(26, 111, 191, 0.15);
+  border: 1px solid rgba(26, 111, 191, 0.4);
+  color: var(--sky);
+  font-size: 1.6rem;
+}
+.login-header h1 {
+  font-family: 'Anton', sans-serif;
+  font-weight: 400;
+  font-size: 1.7rem;
+  letter-spacing: 1px;
+  margin-bottom: 0.4rem;
+}
+.login-header p { color: var(--muted); font-size: 0.9rem; }
+
+.form-group { margin-bottom: 1.3rem; }
+.form-group label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.82rem; font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.input-container { position: relative; }
+.input-container input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  background: #0c1626;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.input-container input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(26, 111, 191, 0.2);
+}
+.input-container input::placeholder { color: #3f5470; }
+
+.toggle-password {
+  position: absolute;
+  right: 12px; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 4px;
+}
+.toggle-password:hover { color: var(--sky); }
+
+.form-options { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.checkbox-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.85rem; color: var(--muted); cursor: pointer;
+}
+.checkbox-label input { accent-color: var(--blue); width: 15px; height: 15px; }
+
+.login-btn {
+  width: 100%;
+  padding: 0.95rem;
+  background: var(--blue);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.98rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  transition: background 0.2s, transform 0.15s;
+  position: relative;
+}
+.login-btn:hover:not(:disabled) { background: #1e80d8; transform: translateY(-1px); }
+.login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.loading-spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.login-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 1.6rem;
+  font-size: 0.82rem;
+}
+.back-link, .forgot-link {
+  color: var(--muted);
+  text-decoration: none;
+  display: flex; align-items: center; gap: 6px;
+  transition: color 0.2s;
+}
+.back-link:hover, .forgot-link:hover { color: var(--sky); }
+
+/* ── RIGHT: BRAND PANEL ── */
+.login-side-right {
+  flex: 1 1 50%;
+  position: relative;
+  background:
+    radial-gradient(ellipse 70% 60% at 30% 20%, rgba(26, 111, 191, 0.35) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 50% at 80% 90%, rgba(245, 166, 35, 0.18) 0%, transparent 65%),
+    linear-gradient(160deg, var(--deep) 0%, #071426 100%);
+  display: flex;
+  align-items: center;
+  padding: 3rem;
+}
+.brand-overlay {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse at center, black 40%, transparent 85%);
+}
+.brand-content { position: relative; z-index: 1; }
+.brand-logo {
+  font-family: 'Anton', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 2px;
+  color: var(--sky);
+  margin-bottom: 2rem;
+}
+.brand-logo b { color: var(--citrus); }
+.brand-content h2 {
+  font-family: 'Anton', sans-serif;
+  font-weight: 400;
+  font-size: 2.1rem;
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+.brand-content p {
+  color: var(--sky);
+  opacity: 0.85;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  max-width: 360px;
+}
+.brand-features {
+  display: flex; flex-direction: column; gap: 10px;
+  margin-top: 2rem;
+}
+.brand-features span {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.88rem; color: var(--text);
+}
+.brand-features i { color: var(--lime); }
+
+/* ── FORGOT PASSWORD MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(3, 8, 15, 0.75);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal-content {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: 90%; max-width: 420px;
+  overflow: hidden;
+}
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1.2rem 1.4rem;
+  border-bottom: 1px solid var(--border);
+}
+.modal-header h3 { font-size: 1.05rem; display: flex; align-items: center; gap: 8px; }
+.modal-close {
+  background: none; border: none; color: var(--muted);
+  font-size: 1.3rem; cursor: pointer; line-height: 1;
+}
+.modal-close:hover { color: var(--text); }
+.modal-body { padding: 1.4rem; }
+.modal-body p { color: var(--muted); font-size: 0.9rem; margin-bottom: 0.5rem; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  .login-side-right { display: none; }
+  .login-container { max-width: 460px; }
+}

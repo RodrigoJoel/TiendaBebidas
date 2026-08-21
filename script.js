@@ -29,6 +29,7 @@ function cargarProductos(productos) {
       cat: p.category ?? p.cat ?? '',
       price: Number(p.price ?? 0),
       old: p.oldPrice != null ? Number(p.oldPrice) : (p.old != null ? Number(p.old) : null),
+      stock: p.stock ?? null,
       emoji: p.emoji ?? '🍾',
       badge: p.badge ?? null,
       newBadge: p.newBadge ?? p.badge === 'NEW'
@@ -88,7 +89,9 @@ function renderProducts(filter) {
     return;
   }
 
-  grid.innerHTML = items.map(p => `
+  grid.innerHTML = items.map(p => {
+    const sinStock = p.stock !== null && p.stock !== undefined && Number(p.stock) <= 0;
+    return `
     <div class="prod-card">
       <div class="prod-img">
         ${p.badge ? `<div class="prod-badge${p.newBadge ? ' new' : ''}">${p.badge}</div>` : ''}
@@ -104,11 +107,12 @@ function renderProducts(filter) {
             <span class="prod-price">${formatPrice(p.price)}</span>
             ${p.old ? `<span class="prod-price-old">${formatPrice(p.old)}</span>` : ''}
           </div>
-          <button class="btn-add" id="btn-${p.id}" onclick="addToCart('${p.id}')">+</button>
+          <button class="btn-add" id="btn-${p.id}" ${sinStock ? 'disabled' : ''} onclick="addToCart('${p.id}')" style="${sinStock ? 'opacity:.4;cursor:not-allowed' : ''}">${sinStock ? '✕' : '+'}</button>
         </div>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function filterProducts(cat) {
@@ -135,6 +139,10 @@ function addToCart(id) {
   const prod = PRODUCTS.find(p => String(p.id) === String(id));
   if (!prod) return;
 
+  const unlimited = prod.stock === null || prod.stock === undefined;
+  const currentQty = cart[id] ? cart[id].qty : 0;
+  if (!unlimited && currentQty >= Number(prod.stock)) return;
+
   cart[id] = cart[id]
     ? { ...cart[id], qty: cart[id].qty + 1 }
     : { ...prod, qty: 1 };
@@ -154,6 +162,11 @@ function addToCart(id) {
 
 function changeQty(id, delta) {
   if (!cart[id]) return;
+  if (delta > 0) {
+    const prod = PRODUCTS.find(p => String(p.id) === String(id));
+    const unlimited = !prod || prod.stock === null || prod.stock === undefined;
+    if (!unlimited && cart[id].qty >= Number(prod.stock)) return;
+  }
   cart[id].qty += delta;
   if (cart[id].qty <= 0) delete cart[id];
   updateCart();

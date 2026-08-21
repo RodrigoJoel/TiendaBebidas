@@ -28,12 +28,14 @@ productos/
     price: 64990
     oldPrice: 0
     size: "700 cc"
+    stock: 12
     badge: ""
     emoji: "🥃"
     image: ""
+    description: ""
     active: true
-    featured: false
     order: 1
+    createdAt: 1737400000000
 ```
 
 ### Campos principales
@@ -41,23 +43,27 @@ productos/
 | Campo | Tipo | Uso |
 |---|---|---|
 | `name` | string | Nombre del producto |
-| `brand` | string | Marca |
-| `category` | string | Categoría: Whisky, Vino, Cerveza, etc. |
+| `brand` | string | Marca. Se autocompleta en el panel admin con las marcas ya cargadas en la categoría, y una marca nueva queda disponible como filtro apenas se guarda el producto |
+| `category` | string | Una de: Whisky, Ron, Vodka, Tequila, Gin, Aguardiente, Espumante, Cerveza, Vino, Energizante, Combos |
 | `price` | number | Precio actual |
-| `oldPrice` | number | Precio anterior opcional |
-| `size` | string | 700 cc, 750 cc, 1 L, etc. |
-| `badge` | string | Oferta, Premium, NEW, etc. |
-| `emoji` | string | Imagen de respaldo |
+| `oldPrice` | number \| null | Precio anterior (tachado) — se muestra solo si es mayor a 0 |
+| `size` | string | Tamaño/presentación. Igual que `brand`: autocompleta y alimenta el filtro lateral |
+| `stock` | number \| null | Unidades disponibles. `null`/vacío = stock ilimitado. En 0 el sitio muestra "Sin stock" y bloquea el agregado al carrito |
+| `badge` | string \| null | Ej: NEW, Oferta, Premium, Hot |
+| `emoji` | string | Ícono de respaldo cuando no hay `image` |
 | `image` | string | URL de imagen del producto |
+| `description` | string | Descripción que se muestra en la ficha/modal del producto |
 | `active` | boolean | Si es `false`, no aparece en la tienda |
-| `featured` | boolean | Reservado para destacados |
-| `order` | number | Orden de aparición |
+| `order` | number | Orden de aparición dentro de su categoría |
+| `createdAt` | number | Timestamp usado por el panel admin para mostrar "últimos productos agregados" |
 
-## 3. Importante sobre seguridad
+## 3. Panel de administración
 
-El frontend solo debe tener permisos de **lectura** para productos. El futuro panel administrador será el que tenga autenticación y permisos de escritura.
+El panel vive en `admin.html` (protegido por `admin-login.html`) y permite cargar, editar, ocultar y borrar productos de cada categoría desde una sola colección `productos`. Para dejarlo operativo hace falta, en Firebase Console (proyecto `globalimportados-ec4cb`):
 
-Una base inicial de reglas para producción puede ser:
+1. **Habilitar el proveedor Email/Password**: *Build → Authentication → Sign-in method → Email/Password → Habilitar*.
+2. **Crear el usuario administrador**: *Build → Authentication → Users → Add user*, con el email `rodrigoatatat@gmail.com` y una contraseña. Ese email es el único autorizado a entrar al panel (está hardcodeado como whitelist en `admin-login.js` y `admin.html`).
+3. **Actualizar las reglas de Firestore** para permitir escritura solo a ese administrador autenticado (*Build → Firestore Database → Rules*):
 
 ```text
 rules_version = '2';
@@ -65,18 +71,18 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /productos/{productoId} {
       allow read: if true;
-      allow write: if false;
+      allow write: if request.auth != null
+                   && request.auth.token.email == 'rodrigoatatat@gmail.com';
     }
   }
 }
 ```
 
-Cuando se cree el panel admin, se reemplazará `allow write: if false` por una condición basada en Firebase Authentication y usuarios administradores.
+Mientras las reglas sigan en `allow write: if false`, el panel se va a poder abrir y navegar, pero cualquier alta/edición/borrado va a fallar con un error de permisos.
 
-## 4. Cómo funcionará después
+## 4. Cómo funciona
 
-- `index.html` lee `productos` y muestra las categorías/productos.
-- `whisky.html` lee la misma colección y muestra solamente `category == "Whisky"`.
-- Las futuras páginas (`vino.html`, `gin.html`, `cerveza.html`, etc.) solo tendrán que reutilizar `firebase.js` y cambiar el nombre de la categoría.
-- `onSnapshot()` mantiene el catálogo sincronizado en tiempo real con Firestore.
-- El panel administrador podrá agregar, editar, activar/desactivar y ordenar productos sin modificar el código de cada sección.
+- `index.html` lee `productos` y muestra los destacados de todas las categorías.
+- `whisky.html`, `vino.html`, `gin.html`, etc. leen la misma colección filtrando por `category`.
+- `onSnapshot()` mantiene el catálogo sincronizado en tiempo real con Firestore, tanto en el sitio como en el panel admin.
+- Desde `admin.html`, cada categoría tiene su propia vista con buscador, filtro por marca/tamaño, alta de productos y edición/borrado/ocultado individual — sin tocar código.

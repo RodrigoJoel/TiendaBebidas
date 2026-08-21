@@ -82,6 +82,41 @@ nav {
   align-items: center;
 }
 
+/* ───── SUBNAV DE CATEGORÍAS ───── */
+.category-nav {
+  position: fixed;
+  top: 72px;
+  left: 0;
+  right: 0;
+  z-index: 99;
+  background: rgba(8, 15, 26, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+}
+.category-nav::-webkit-scrollbar { display: none; }
+.category-nav-inner {
+  display: inline-flex;
+  gap: 0.5rem;
+  padding: 0.7rem 2rem;
+}
+.cat-nav-link {
+  flex-shrink: 0;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.45rem 1rem;
+  border-radius: 50px;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+.cat-nav-link:hover { color: var(--text); border-color: var(--border); }
+.cat-nav-link.active { background: var(--blue); color: #fff; }
+
+
 .btn-cart {
   background: var(--blue);
   color: #fff;
@@ -121,7 +156,7 @@ nav {
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
-  padding: 8rem 2rem 4rem;
+  padding: 11rem 2rem 4rem;
   max-width: 100% !important;
   padding-left: 2rem;
   padding-right: 2rem;
