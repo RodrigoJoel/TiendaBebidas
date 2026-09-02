@@ -2,18 +2,23 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <script>(function(){try{var t=localStorage.getItem("gi_theme");if(t==="light")document.documentElement.setAttribute("data-theme","light");}catch(e){}})();</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Finalizar compra · GLOBAL IMPORTADOS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="checkout.css" />
+  <script src="theme.js" defer></script>
 </head>
 <body>
 
   <!-- ====== NAV ====== -->
   <nav>
     <a href="index.html" class="nav-logo">RESERVA GLOBAL IMPORTADOS</a>
-    <div class="nav-secure">🔒 Compra segura</div>
+    <div class="nav-actions">
+      <div class="nav-secure">🔒 Compra segura</div>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Cambiar tema" title="Cambiar tema"><span id="themeIcon">☀️</span></button>
+    </div>
   </nav>
 
   <div class="checkout-page">

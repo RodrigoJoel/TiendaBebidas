@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <script>(function(){try{var t=localStorage.getItem("gi_theme");if(t==="light")document.documentElement.setAttribute("data-theme","light");}catch(e){}})();</script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RESERVA GLOBAL IMPORTADOS — Bebidas a todo el país</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -10,6 +11,7 @@
     rel="stylesheet"
   />
   <link rel="stylesheet" href="styles.css" />
+  <script src="theme.js" defer></script>
 </head>
 <body>
 
@@ -23,6 +25,7 @@
       <li><a href="#contacto">Contacto</a></li>
     </ul>
     <div class="nav-actions">
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Cambiar tema" title="Cambiar tema"><span id="themeIcon">☀️</span></button>
       <button class="btn-cart" onclick="toggleCart()">
         🛒 Carrito
         <span class="cart-count" id="cartCount">0</span>
