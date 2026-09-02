@@ -9,6 +9,7 @@ window.CATEGORY_CONFIG = {
   Vodka:       { icon: '🍸', label: 'Vodka',       title: 'GESTIÓN DE <span>VODKA</span>',       sub: 'Vodkas nacionales e importados.' },
   Tequila:     { icon: '🌵', label: 'Tequila',     title: 'GESTIÓN DE <span>TEQUILA</span>',     sub: 'Blanco, reposado y añejo.' },
   Gin:         { icon: '🍈', label: 'Gin',         title: 'GESTIÓN DE <span>GIN</span>',         sub: 'London dry y gins premium.' },
+  Licores:     { icon: '🥂', label: 'Licores',     title: 'GESTIÓN DE <span>LICORES</span>',     sub: 'Licores, cremas y aperitivos.' },
   Aguardiente: { icon: '🥃', label: 'Aguardiente', title: 'GESTIÓN DE <span>AGUARDIENTE</span>', sub: 'Aguardientes y destilados.' },
   Espumante:   { icon: '🍾', label: 'Espumante',   title: 'GESTIÓN DE <span>ESPUMANTE</span>',   sub: 'Champagne, espumantes y frizzantes.' },
   Cerveza:     { icon: '🍺', label: 'Cerveza',     title: 'GESTIÓN DE <span>CERVEZA</span>',     sub: 'Rubias, negras, IPA y artesanales.' },

@@ -37,6 +37,7 @@
       <a href="vodka.html" class="cat-nav-link">Vodka</a>
       <a href="tequila.html" class="cat-nav-link">Tequila</a>
       <a href="gin.html" class="cat-nav-link">Gin</a>
+      <a href="licores.html" class="cat-nav-link">Licores</a>
       <a href="aguardiente.html" class="cat-nav-link">Aguardiente</a>
       <a href="espumante.html" class="cat-nav-link">Espumante</a>
       <a href="cerveza.html" class="cat-nav-link">Cerveza</a>
@@ -296,6 +297,8 @@ Porque lo exclusivo también puede estar al alcance de todos. Todo a un click.
             <li><a href="vodka.html">Vodka</a></li>
             <li><a href="tequila.html">Tequila</a></li>
             <li><a href="gin.html">Gin</a></li>
+            <li><a href="licores.html">Licores</a></li>
+            <li><a href="aguardiente.html">Aguardiente</a></li>
             <li><a href="espumante.html">Espumantes</a></li>
             <li><a href="cerveza.html">Cervezas</a></li>
             <li><a href="vino.html">Vinos</a></li>
@@ -306,20 +309,19 @@ Porque lo exclusivo también puede estar al alcance de todos. Todo a un click.
         <div class="footer-col">
           <h4>Ayuda</h4>
           <ul>
-            <li><a href="#">¿Cómo comprar?</a></li>
-            <li><a href="#">Seguimiento de envío</a></li>
-            <li><a href="#">Cambios y devoluciones</a></li>
-            <li><a href="#">Medios de pago</a></li>
-            <li><a href="#">Contacto</a></li>
+            <li><a href="#envios">¿Cómo comprar?</a></li>
+            <li><a href="seguimiento.html">Seguimiento de envío</a></li>
+            <li><a href="cambios-devoluciones.html">Cambios y devoluciones</a></li>
+            <li><a href="medios-pago.html">Medios de pago</a></li>
+            <li><a href="#contacto">Contacto</a></li>
           </ul>
         </div>
         <div class="footer-col">
           <h4>Legal</h4>
           <ul>
-            <li><a href="#">Términos y condiciones</a></li>
-            <li><a href="#">Política de privacidad</a></li>
-            <li><a href="#">Defensa del consumidor</a></li>
-            <li><a href="#">Preguntas frecuentes</a></li>
+            <li><a href="terminos.html">Términos y condiciones</a></li>
+            <li><a href="privacidad.html">Política de privacidad</a></li>
+            <li><a href="preguntas-frecuentes.html">Preguntas frecuentes</a></li>
           </ul>
         </div>
       </div>
@@ -353,7 +355,7 @@ Porque lo exclusivo también puede estar al alcance de todos. Todo a un click.
         <span>Total estimado</span>
         <strong id="cartTotal">$0</strong>
       </div>
-      <button class="btn-checkout" id="checkoutBtn" disabled>Finalizar pedido →</button>
+      <button class="btn-checkout" id="checkoutBtn" onclick="irACheckout()" disabled>Finalizar pedido →</button>
     </div>
   </div>
 

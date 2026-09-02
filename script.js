@@ -214,12 +214,22 @@ function toggleCart() {
 }
 
 // ============================================================
+//  IR A CHECKOUT
+// ============================================================
+function irACheckout() {
+  if (!Object.keys(cart).length) return;
+  localStorage.setItem('gi_cart', JSON.stringify(cart));
+  window.location.href = 'checkout.html';
+}
+
+// ============================================================
 //  FUNCIONES USADAS POR onclick="..." EN HTML
 // ============================================================
 window.filterProducts = filterProducts;
 window.addToCart = addToCart;
 window.changeQty = changeQty;
 window.toggleCart = toggleCart;
+window.irACheckout = irACheckout;
 
 // El carrito se inicializa aunque Firestore todavía esté cargando.
 updateCart();

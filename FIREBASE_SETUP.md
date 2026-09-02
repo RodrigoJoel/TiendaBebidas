@@ -44,7 +44,7 @@ productos/
 |---|---|---|
 | `name` | string | Nombre del producto |
 | `brand` | string | Marca. Se autocompleta en el panel admin con las marcas ya cargadas en la categoría, y una marca nueva queda disponible como filtro apenas se guarda el producto |
-| `category` | string | Una de: Whisky, Ron, Vodka, Tequila, Gin, Aguardiente, Espumante, Cerveza, Vino, Energizante, Combos |
+| `category` | string | Una de: Whisky, Ron, Vodka, Tequila, Gin, Licores, Aguardiente, Espumante, Cerveza, Vino, Energizante, Combos |
 | `price` | number | Precio actual |
 | `oldPrice` | number \| null | Precio anterior (tachado) — se muestra solo si es mayor a 0 |
 | `size` | string | Tamaño/presentación. Igual que `brand`: autocompleta y alimenta el filtro lateral |
