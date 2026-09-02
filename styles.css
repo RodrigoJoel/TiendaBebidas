@@ -760,9 +760,14 @@ footer {
 
 .footer-top {
   display: grid;
-  grid-template-columns: 2fr repeat(3, 1fr);
+  grid-template-columns: 1.8fr 1.4fr 1fr 1fr;
   gap: 3rem;
   margin-bottom: 3rem;
+}
+
+.footer-top .footer-col:nth-child(2) ul {
+  columns: 2;
+  column-gap: 1.25rem;
 }
 
 .footer-brand .nav-logo {
@@ -1077,17 +1082,31 @@ footer {
 }
 
 /* ───── PÁGINAS DE CONTENIDO (legal / ayuda) ───── */
+.legal-hero {
+  position: relative;
+  overflow: hidden;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 9rem 2rem 3rem;
+}
+
+.legal-hero .hero-tag {
+  margin-bottom: 1.25rem;
+}
+
+.legal-hero .section-label {
+  margin-bottom: 0.5rem;
+}
+
+.legal-hero .section-title {
+  margin-bottom: 0;
+}
+
 .legal-content {
-  padding: 9rem 2rem 4rem;
+  position: relative;
   max-width: 860px;
-}
-
-.legal-content .section-label {
-  margin-bottom: 0.5rem;
-}
-
-.legal-content .section-title {
-  margin-bottom: 0.5rem;
+  margin: 0 auto;
+  padding: 0 2rem 4rem;
 }
 
 .legal-updated {
