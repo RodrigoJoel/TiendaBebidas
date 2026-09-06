@@ -37,6 +37,9 @@ function cargarCarrito() {
     cart = {};
   }
 
+  const retorno = verificarRetornoMercadoPago();
+  if (retorno === 'approved') return;
+
   if (!Object.keys(cart).length) {
     // No hay nada para pagar: volvemos a la tienda.
     window.location.href = 'index.html';
@@ -44,6 +47,10 @@ function cargarCarrito() {
   }
 
   renderResumen();
+
+  if (retorno === 'pending' || retorno === 'failure') {
+    mostrarPaso(2);
+  }
 }
 
 function poblarProvincias() {
@@ -111,7 +118,7 @@ function volverAPasoUno() {
 }
 
 // ============================================================
-//  PAGO (Mercado Pago — integración pendiente)
+//  PAGO (Mercado Pago Checkout Pro)
 // ============================================================
 function generarNumeroPedido() {
   const fecha = Date.now().toString(36).toUpperCase();
@@ -119,25 +126,84 @@ function generarNumeroPedido() {
   return `GI-${fecha}-${azar}`;
 }
 
-function pagarConMercadoPago() {
-  // TODO: reemplazar esta simulación por la integración real de
-  // Mercado Pago Checkout Pro (requiere Firebase Cloud Functions
-  // para generar la preferencia de pago de forma segura).
-  // Por ahora, simulamos que el pago fue aprobado y avanzamos
-  // directo a la confirmación del pedido.
-
-  const email = document.getElementById('fEmail')?.value || '—';
+async function pagarConMercadoPago() {
+  const btn = document.getElementById('btnPagarMP');
+  const email = document.getElementById('fEmail')?.value || '';
   const numeroPedido = generarNumeroPedido();
+  const cartItems = Object.values(cart).map(i => ({ id: i.id, qty: i.qty }));
 
-  document.getElementById('orderNumber').textContent = numeroPedido;
-  document.getElementById('confirmEmail').textContent = email;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Generando pago…';
+  }
 
-  document.getElementById('checkoutSide')?.classList.add('hidden');
+  try {
+    const resp = await fetch('/api/crear-preferencia', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cartItems, orderNumber: numeroPedido, payerEmail: email })
+    });
 
-  mostrarPaso(3);
+    const data = await resp.json().catch(() => ({}));
 
-  localStorage.removeItem('gi_cart');
-  cart = {};
+    if (!resp.ok || !(data.init_point || data.sandbox_init_point)) {
+      throw new Error(data.error || 'No se pudo generar el pago');
+    }
+
+    // Se guardan para poder mostrar la confirmación cuando Mercado
+    // Pago redirija de vuelta a esta misma página.
+    localStorage.setItem('gi_pending_order', numeroPedido);
+    localStorage.setItem('gi_pending_email', email);
+
+    window.location.href = data.init_point || data.sandbox_init_point;
+  } catch (err) {
+    console.error('Error al iniciar el pago con Mercado Pago:', err);
+    alert('No pudimos conectar con Mercado Pago. Probá de nuevo en unos segundos.');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Pagar con Mercado Pago 🔒';
+    }
+  }
+}
+
+// ============================================================
+//  RETORNO DESDE MERCADO PAGO
+//  Mercado Pago redirige a checkout.html?status=approved|pending|
+//  failure (junto con más parámetros propios). Acá se detecta esa
+//  vuelta y se muestra el paso correspondiente.
+// ============================================================
+function verificarRetornoMercadoPago() {
+  const params = new URLSearchParams(window.location.search);
+  const status = params.get('status') || params.get('collection_status');
+  if (!status) return null;
+
+  // Se limpia la URL para no reprocesar el mismo estado si se recarga.
+  window.history.replaceState({}, '', window.location.pathname);
+
+  if (status === 'approved') {
+    const numeroPedido = params.get('external_reference') || localStorage.getItem('gi_pending_order') || generarNumeroPedido();
+    const email = localStorage.getItem('gi_pending_email') || '—';
+
+    document.getElementById('orderNumber').textContent = numeroPedido;
+    document.getElementById('confirmEmail').textContent = email;
+    document.getElementById('checkoutSide')?.classList.add('hidden');
+
+    mostrarPaso(3);
+
+    localStorage.removeItem('gi_cart');
+    localStorage.removeItem('gi_pending_order');
+    localStorage.removeItem('gi_pending_email');
+    cart = {};
+    return 'approved';
+  }
+
+  if (status === 'pending' || status === 'in_process') {
+    alert('Tu pago está pendiente de aprobación. Te avisaremos por email apenas se confirme.');
+    return 'pending';
+  }
+
+  alert('El pago no se pudo completar. Podés intentar de nuevo.');
+  return 'failure';
 }
 
 // ============================================================
