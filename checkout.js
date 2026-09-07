@@ -15,6 +15,7 @@ const PROVINCIAS = [
 ];
 
 let cart = {};
+let medioPago = 'mp';
 
 // ============================================================
 //  UTILS
@@ -118,6 +119,24 @@ function volverAPasoUno() {
 }
 
 // ============================================================
+//  SELECCIÓN DE MEDIO DE PAGO
+// ============================================================
+const WHATSAPP_NUMERO = '5492995000000';
+
+function seleccionarMedioPago(metodo) {
+  medioPago = metodo;
+
+  document.querySelectorAll('.payment-option').forEach(el => {
+    el.classList.toggle('selected', el.dataset.method === metodo);
+  });
+
+  document.getElementById('cardsStrip')?.classList.toggle('hidden', metodo !== 'mp');
+  document.getElementById('transferDetails')?.classList.toggle('hidden', metodo !== 'transferencia');
+  document.getElementById('btnPagarMP')?.classList.toggle('hidden', metodo !== 'mp');
+  document.getElementById('btnConfirmarTransferencia')?.classList.toggle('hidden', metodo !== 'transferencia');
+}
+
+// ============================================================
 //  PAGO (Mercado Pago Checkout Pro)
 // ============================================================
 function generarNumeroPedido() {
@@ -167,6 +186,57 @@ async function pagarConMercadoPago() {
 }
 
 // ============================================================
+//  MAIL DE CONFIRMACIÓN
+// ============================================================
+async function enviarMailConfirmacion(email, numeroPedido, metodoPago) {
+  if (!email) return;
+
+  const items = Object.values(cart).map(i => ({
+    name: i.name,
+    qty: i.qty,
+    subtotal: formatPrice(i.price * i.qty)
+  }));
+  const total = formatPrice(cartTotal() + COSTO_ENVIO);
+
+  try {
+    await fetch('/api/enviar-confirmacion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, orderNumber: numeroPedido, items, total, metodoPago })
+    });
+  } catch (err) {
+    console.error('No se pudo enviar el mail de confirmación:', err);
+  }
+}
+
+// ============================================================
+//  PAGO (Transferencia bancaria)
+// ============================================================
+function confirmarTransferencia() {
+  const email = document.getElementById('fEmail')?.value || '';
+  const numeroPedido = generarNumeroPedido();
+  const total = cartTotal() + COSTO_ENVIO;
+  const detalleItems = Object.values(cart).map(i => `${i.qty}x ${i.name}`).join(', ');
+
+  const mensaje = `Hola! Quiero confirmar mi pedido ${numeroPedido} por transferencia.\nPedido: ${detalleItems}\nTotal: ${formatPrice(total)}\nEn un momento les envío el comprobante.`;
+  window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`, '_blank');
+
+  enviarMailConfirmacion(email, numeroPedido, 'transferencia');
+
+  document.getElementById('orderNumber').textContent = numeroPedido;
+  document.getElementById('confirmEmail').textContent = email || '—';
+  document.getElementById('confirmationTitle').textContent = '¡Pedido registrado!';
+  document.getElementById('confirmationText').innerHTML = `Avisanos por WhatsApp con el comprobante de tu transferencia a <strong>${email || 'tu contacto'}</strong> — apenas lo confirmemos, coordinamos el envío.`;
+  document.getElementById('confirmationNote').textContent = 'Tu pedido queda pendiente hasta que verifiquemos el comprobante que nos envíes por WhatsApp.';
+  document.getElementById('checkoutSide')?.classList.add('hidden');
+
+  mostrarPaso(3);
+
+  localStorage.removeItem('gi_cart');
+  cart = {};
+}
+
+// ============================================================
 //  RETORNO DESDE MERCADO PAGO
 //  Mercado Pago redirige a checkout.html?status=approved|pending|
 //  failure (junto con más parámetros propios). Acá se detecta esa
@@ -190,6 +260,8 @@ function verificarRetornoMercadoPago() {
 
     mostrarPaso(3);
 
+    enviarMailConfirmacion(email, numeroPedido, 'mp');
+
     localStorage.removeItem('gi_cart');
     localStorage.removeItem('gi_pending_order');
     localStorage.removeItem('gi_pending_email');
@@ -211,7 +283,9 @@ function verificarRetornoMercadoPago() {
 // ============================================================
 window.irAPago = irAPago;
 window.volverAPasoUno = volverAPasoUno;
+window.seleccionarMedioPago = seleccionarMedioPago;
 window.pagarConMercadoPago = pagarConMercadoPago;
+window.confirmarTransferencia = confirmarTransferencia;
 
 poblarProvincias();
 cargarCarrito();

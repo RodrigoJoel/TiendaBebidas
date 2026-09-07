@@ -212,18 +212,25 @@ textarea.form-input { resize: vertical; }
 }
 
 /* ───── MEDIOS DE PAGO ───── */
-.payment-methods { margin-bottom: 1rem; }
+.payment-methods { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem; }
 .payment-option {
   display: flex;
   align-items: center;
   gap: 1rem;
   padding: 1.1rem 1.25rem;
-  border: 1.5px solid var(--blue);
-  background: rgba(26, 111, 191, 0.08);
+  border: 1.5px solid var(--border);
+  background: var(--card);
   border-radius: 12px;
   position: relative;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+.payment-option.selected {
+  border: 1.5px solid var(--blue);
+  background: rgba(26, 111, 191, 0.08);
 }
 .pay-logo { height: 22px; }
+.pay-icon { font-size: 1.4rem; line-height: 1; width: 26px; text-align: center; }
 .payment-option strong { display: block; font-size: 0.95rem; margin-bottom: 0.2rem; }
 .payment-option span { font-size: 0.78rem; color: var(--muted); }
 .payment-check {
@@ -237,6 +244,36 @@ textarea.form-input { resize: vertical; }
   align-items: center;
   justify-content: center;
   font-size: 0.8rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.payment-option.selected .payment-check { opacity: 1; }
+
+/* ───── TRANSFERENCIA ───── */
+.transfer-details {
+  background: var(--dark);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.transfer-details h3 { font-size: 0.95rem; margin-bottom: 1rem; }
+.transfer-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 0;
+  font-size: 0.88rem;
+  border-bottom: 1px solid var(--border);
+}
+.transfer-row:last-of-type { border-bottom: none; }
+.transfer-row span { color: var(--muted); }
+.transfer-row strong { font-family: 'DM Sans', sans-serif; color: var(--sky); }
+.transfer-note {
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.5;
 }
 .payment-cards-strip {
   display: flex;
