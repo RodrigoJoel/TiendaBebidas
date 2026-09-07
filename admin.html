@@ -39,6 +39,7 @@
   <nav class="sidebar">
     <div class="sidebar-section">General</div>
     <div class="nav-item active" onclick="navigate('dashboard',this)"><span class="nav-icon">📊</span><span>Dashboard</span></div>
+    <div class="nav-item" onclick="navigate('carousels',this)"><span class="nav-icon">🖼️</span><span>Carruseles de portada</span></div>
     <div class="nav-divider"></div>
 
     <div class="sidebar-section">Catálogo</div>
@@ -196,12 +197,18 @@ window.logoutAdmin = async function () {
   }
 };
 
-window.DATA = { productos: [] };
+window.DATA = { productos: [], carousels: {} };
 window.currentPage = "dashboard";
 
 function setupRealtimeListener() {
   onSnapshot(collection(db, "productos"), (snap) => {
     window.DATA.productos = snap.docs.map((d) => ({ docId: d.id, ...d.data() }));
+    if (typeof window.render === "function") window.render(window.currentPage);
+  });
+  onSnapshot(collection(db, "heroCarousels"), (snap) => {
+    const carousels = {};
+    snap.docs.forEach((d) => { carousels[d.id] = d.data(); });
+    window.DATA.carousels = carousels;
     if (typeof window.render === "function") window.render(window.currentPage);
   });
 }

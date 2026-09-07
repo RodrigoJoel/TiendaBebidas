@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="styles.css" />
   <script src="theme.js" defer></script>
 </head>
-<body>
+<body data-hero-section="home">
 
   <!-- ========== NAV ========== -->
   <nav>
@@ -52,6 +52,7 @@
 
   <!-- ========== HERO ========== -->
   <section class="hero">
+    <div class="hero-carousel" id="heroCarousel" aria-hidden="true"></div>
     <div class="hero-bg"></div>
     <div class="hero-grid"></div>
     <div class="hero-tag">🟢 Envíos a todo el país · Compras las 24hs</div>
@@ -74,9 +75,6 @@ Porque lo exclusivo también puede estar al alcance de todos. Todo a un click.
       <div class="hero-stat"><strong>23</strong><span>Provincias</span></div>
       <div class="hero-stat"><strong>4.9★</strong><span>Calificación</span></div>
     </div>-->
-    <div class="hero-img-area" aria-hidden="true">
-      <div class="hero-circle"></div>
-    </div>
   </section>
 
   <!-- ========== SHIPPING BAR ========== -->
@@ -116,7 +114,7 @@ Porque lo exclusivo también puede estar al alcance de todos. Todo a un click.
         <div class="cat-count"></div>
       </a>
       <a href="#" class="cat-card" onclick="window.location.href='licores.html'; return false;">
-        <div class="cat-emoji" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.6rem;background:linear-gradient(135deg, rgba(26,111,191,0.18), rgba(46,204,113,0.10));">🥂</div>
+        <img class="cat-emoji" src="https://images.unsplash.com/photo-1470337458703-46ad1756a187?auto=format&fit=crop&w=160&q=85" alt="Licores" style="width:100%;height:100%;object-fit:cover;display:block;" />
         <div class="cat-name">Licores</div>
         <div class="cat-count"></div>
       </a>
@@ -148,7 +146,7 @@ Porque lo exclusivo también puede estar al alcance de todos. Todo a un click.
       </a>
 
       <a href="#" class="cat-card" onclick="window.location.href='combos.html'; return false;">
-        <img class="cat-emoji" src="https://images.unsplash.com/photo-1608885898957-a06b352a1cb9?auto=format&fit=crop&w=160&q=85" alt="Combos" style="width:100%;height:100%;object-fit:cover;display:block;" />
+        <img class="cat-emoji" src="https://images.unsplash.com/photo-1560508180-03f285f67ded?auto=format&fit=crop&w=160&q=85" alt="Combos" style="width:100%;height:100%;object-fit:cover;display:block;" />
         <div class="cat-name">Combos</div>
         <div class="cat-count"></div>
       </a>
@@ -375,6 +373,7 @@ Porque lo exclusivo también puede estar al alcance de todos. Todo a un click.
     </svg>
   </a>
 
+  <script type="module" src="hero-carousel.js"></script>
   <script type="module" src="script.js"></script>
 </body>
 </html>

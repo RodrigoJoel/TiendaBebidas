@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="licores.css" />
   <script src="theme.js" defer></script>
 </head>
-<body>
+<body data-hero-section="licores">
 
   <!-- ====== NAV ====== -->
   <nav>
@@ -48,6 +48,7 @@
 
   <!-- ====== HERO ====== -->
   <section class="hero" id="hero">
+    <div class="hero-carousel" id="heroCarousel" aria-hidden="true"></div>
     <div class="hero-bg"></div>
     <div class="hero-grid"></div>
     <div class="hero-tag">🥂 Licores · Envíos a todo el país</div>
@@ -198,6 +199,7 @@
     </svg>
   </a>
 
+  <script type="module" src="hero-carousel.js"></script>
   <script type="module" src="licores.js"></script>
 </body>
 </html>

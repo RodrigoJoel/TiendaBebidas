@@ -132,6 +132,7 @@ function render(page) {
   const main = document.getElementById('mainContent');
   if (!main) return;
   if (page === 'dashboard') { main.innerHTML = pageDashboard(); return; }
+  if (page === 'carousels') { main.innerHTML = pageCarousels(); return; }
   if (page === 'todos') { main.innerHTML = pageCategoryManager('todos'); return; }
   if (window.CATEGORY_CONFIG[page]) { main.innerHTML = pageCategoryManager(page); return; }
   main.innerHTML = '<p style="color:var(--muted)">Página no encontrada</p>';
@@ -193,6 +194,81 @@ function pageDashboard() {
       </div>
     </div>`;
 }
+
+// ─────────────────────────────────────────────
+// CARRUSELES DE PORTADA (fotos de fondo del hero)
+// ─────────────────────────────────────────────
+window.CAROUSEL_SECTIONS = [
+  { key: 'home', icon: '🏠', label: 'Inicio (home)' },
+  { key: 'whisky', icon: '🥃', label: 'Whisky' },
+  { key: 'ron', icon: '🍹', label: 'Ron' },
+  { key: 'vodka', icon: '🍸', label: 'Vodka' },
+  { key: 'tequila', icon: '🌵', label: 'Tequila' },
+  { key: 'gin', icon: '🍈', label: 'Gin' },
+  { key: 'licores', icon: '🥂', label: 'Licores' },
+  { key: 'aguardiente', icon: '🥃', label: 'Aguardiente' },
+  { key: 'espumante', icon: '🍾', label: 'Espumante' },
+  { key: 'cerveza', icon: '🍺', label: 'Cerveza' },
+  { key: 'vino', icon: '🍷', label: 'Vino' },
+  { key: 'energizante', icon: '⚡', label: 'Energizante' },
+  { key: 'combos', icon: '📦', label: 'Combos' }
+];
+
+function pageCarousels() {
+  const data = window.DATA.carousels || {};
+  return `
+    <div class="page-header">
+      <div>
+        <div class="page-title">CARRUSELES <span>DE PORTADA</span></div>
+        <div class="page-sub">Hasta 3 fotos de fondo para el encabezado de cada sección. Se van rotando solas en el sitio; con 1 sola foto queda fija.</div>
+      </div>
+    </div>
+    ${window.CAROUSEL_SECTIONS.map(s => carouselCard(s, (data[s.key] && data[s.key].images) || [])).join('')}
+  `;
+}
+
+function carouselCard(section, images) {
+  const slots = [0, 1, 2].map(i => {
+    const url = images[i] || '';
+    const inputId = `car_${section.key}_${i}`;
+    const prevId = `${inputId}_prev`;
+    return `
+      <div class="field">
+        <label>Foto ${i + 1}</label>
+        <input id="${inputId}" value="${esc(url)}" placeholder="https://..." oninput="previewImg('${inputId}','${prevId}')"/>
+        <div class="img-preview-wrap"><div class="img-preview" id="${prevId}">${url ? `<img src="${esc(url)}" alt=""/>` : `<span>Vista previa</span>`}</div></div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span>${section.icon}</span> ${section.label}</div>
+      </div>
+      <div class="card-body">
+        <div class="field-row3">${slots}</div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="saveCarousel('${section.key}')">💾 Guardar</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function saveCarousel(key) {
+  const images = [0, 1, 2]
+    .map(i => document.getElementById(`car_${key}_${i}`)?.value.trim())
+    .filter(Boolean);
+  setSaving('saving');
+  try {
+    await window.fsSetDoc(window.fsDoc(window.db, 'heroCarousels', key), { images }, { merge: true });
+    setSaving('ok');
+    showToast('✅ Carrusel actualizado');
+  } catch (e) {
+    setSaving('');
+    showToast('❌ Error: ' + e.message, 'err');
+  }
+}
+window.saveCarousel = saveCarousel;
 
 // ─────────────────────────────────────────────
 // CATEGORY MANAGER (agregar / listar / editar / borrar)

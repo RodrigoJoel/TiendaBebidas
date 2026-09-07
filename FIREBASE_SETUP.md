@@ -74,11 +74,16 @@ service cloud.firestore {
       allow write: if request.auth != null
                    && request.auth.token.email == 'rodrigoatatat@gmail.com';
     }
+    match /heroCarousels/{seccion} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.auth.token.email == 'rodrigoatatat@gmail.com';
+    }
   }
 }
 ```
 
-Mientras las reglas sigan en `allow write: if false`, el panel se va a poder abrir y navegar, pero cualquier alta/edición/borrado va a fallar con un error de permisos.
+Mientras las reglas sigan en `allow write: if false`, el panel se va a poder abrir y navegar, pero cualquier alta/edición/borrado va a fallar con un error de permisos. Lo mismo pasa con `heroCarousels`: si no se agrega su regla, el sitio sigue mostrando las fotos de referencia (las que ya vienen cargadas por defecto) pero nunca va a leer las que se carguen desde el panel, y el panel va a fallar al guardar con "Missing or insufficient permissions".
 
 ## 4. Cómo funciona
 
@@ -86,3 +91,25 @@ Mientras las reglas sigan en `allow write: if false`, el panel se va a poder abr
 - `whisky.html`, `vino.html`, `gin.html`, etc. leen la misma colección filtrando por `category`.
 - `onSnapshot()` mantiene el catálogo sincronizado en tiempo real con Firestore, tanto en el sitio como en el panel admin.
 - Desde `admin.html`, cada categoría tiene su propia vista con buscador, filtro por marca/tamaño, alta de productos y edición/borrado/ocultado individual — sin tocar código.
+
+## 5. Carruseles de portada (fotos de fondo del hero)
+
+Cada página (home + las 12 categorías) muestra hasta 3 fotos como fondo difuminado detrás del título, rotando solas. Se administran desde `admin.html → Carruseles de portada`, sin tocar código.
+
+Colección:
+
+`heroCarousels`
+
+Un documento por sección, con el nombre de la sección como ID:
+
+`home`, `whisky`, `ron`, `vodka`, `tequila`, `gin`, `licores`, `aguardiente`, `espumante`, `cerveza`, `vino`, `energizante`, `combos`
+
+```text
+heroCarousels/
+  whisky
+    images: ["https://...", "https://...", "https://..."]
+```
+
+- `images`: array de hasta 3 URLs. Con 1 sola foto queda fija (no rota); con 0 el sitio usa una foto de referencia hardcodeada en `hero-carousel.js` hasta que se cargue algo real.
+- El panel guarda con "merge", así que cada sección se puede guardar por separado sin pisar las demás.
+- Hace falta la regla de Firestore de la sección 3 para que el sitio pueda leer `heroCarousels` y el panel pueda escribirlo.

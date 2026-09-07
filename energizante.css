@@ -218,14 +218,41 @@ nav {
   position: relative;
   overflow: hidden;
 }
+.hero-carousel {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+}
+.hero-carousel-slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 2s ease;
+}
+.hero-carousel-slide.active {
+  opacity: 0.22;
+}
+.hero-carousel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(100deg, var(--dark) 0%, var(--dark) 32%, transparent 78%),
+    linear-gradient(0deg, var(--dark) 0%, transparent 35%);
+}
 .hero-bg {
   position: absolute;
   inset: 0;
+  z-index: -1;
   background: radial-gradient(ellipse 60% 50% at 80% 50%, rgba(26, 111, 191, 0.18) 0%, transparent 70%);
 }
 .hero-grid {
   position: absolute;
   inset: 0;
+  z-index: -1;
   background-image:
     linear-gradient(var(--grid-line) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);

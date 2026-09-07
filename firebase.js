@@ -3,7 +3,7 @@
 // ============================================================
 // Firebase Web SDK 12.17.0 - API modular
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDRKn7CkbwblMLohJjq7oIE73vXiWlrB70",
@@ -34,6 +34,22 @@ export function escucharProductos(callback, onError = console.error) {
     },
     error => {
       console.error("Error al leer productos desde Firestore:", error);
+      onError(error);
+    }
+  );
+}
+
+/**
+ * Escucha en tiempo real las fotos del carrusel de portada de una
+ * sección (home, whisky, ron, ...). Documento: heroCarousels/{seccion}
+ * con forma { images: string[] }.
+ */
+export function escucharCarrusel(seccion, callback, onError = console.error) {
+  return onSnapshot(
+    doc(db, "heroCarousels", seccion),
+    snap => callback(snap.exists() ? (snap.data().images || []) : []),
+    error => {
+      console.error("Error al leer el carrusel desde Firestore:", error);
       onError(error);
     }
   );
