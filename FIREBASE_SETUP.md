@@ -180,9 +180,14 @@ pedidos/
 
 ### Mails
 
-Salen desde Resend con las variables `RESEND_API_KEY`, `RESEND_FROM_EMAIL` (opcional) y `AVISO_PEDIDOS_EMAIL` (opcional; si falta, el aviso llega al mail del administrador). Ver `.env.example`.
+Salen por SMTP desde una cuenta de Gmail (gratis, hasta ~500 mails por día), a nombre de "Reserva Global Importados". Se configuran en Vercel con:
 
-Mientras no haya un dominio propio verificado en Resend, Resend solo entrega mails a la casilla con la que se creó la cuenta: el aviso al dueño llega, pero la confirmación al cliente no. Para producción hay que verificar un dominio y cargar `RESEND_FROM_EMAIL` con una dirección de ese dominio.
+- `SMTP_USER`: la dirección de Gmail que manda los mails. Conviene una cuenta propia de la tienda y no la personal.
+- `SMTP_PASS`: una **contraseña de aplicación** de esa cuenta, no la contraseña normal. Se crea en *Cuenta de Google → Seguridad → Verificación en 2 pasos* (tiene que estar activada) *→ Contraseñas de aplicaciones*.
+- `AVISO_PEDIDOS_EMAIL` (opcional): a qué casilla llega el aviso de cada pedido nuevo. Si falta, llega al mail del administrador.
+- `SMTP_HOST` / `SMTP_PORT` (opcionales): solo para usar otro proveedor en lugar de Gmail.
+
+Después de cargar o cambiar una variable en Vercel hay que hacer un deploy nuevo para que la tome. Si faltan las variables o el envío falla, el pedido se guarda igual y el error queda en los logs de Vercel ("Faltan SMTP_USER / SMTP_PASS" o "Error de SMTP").
 
 ### Reglas
 

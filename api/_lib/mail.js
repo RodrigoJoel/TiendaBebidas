@@ -1,13 +1,16 @@
 // ============================================================
-//  Mails de pedidos (Resend). Solo se mandan desde el servidor,
-//  con datos del pedido ya guardado: el navegador no puede
-//  elegir destinatario ni contenido.
+//  Mails de pedidos (SMTP, por defecto una cuenta de Gmail con
+//  "contraseña de aplicación"). Solo se mandan desde el servidor,
+//  con datos del pedido ya guardado: el navegador no puede elegir
+//  destinatario ni contenido.
 //
-//  Mientras no haya un dominio propio verificado en Resend, solo
-//  llegan a la casilla del dueño de la cuenta de Resend. Cuando se
-//  verifique, cambiar RESEND_FROM_EMAIL y le llegan a cualquiera.
+//  Variables: SMTP_USER y SMTP_PASS (obligatorias), SMTP_HOST y
+//  SMTP_PORT (opcionales, por defecto Gmail). Salen a nombre de
+//  "Reserva Global Importados" desde la casilla de SMTP_USER.
 // ============================================================
-const FROM_EMAIL_DEFAULT = 'Reserva Global Importados <onboarding@resend.dev>';
+const nodemailer = require('nodemailer');
+
+const NOMBRE_REMITENTE = 'Reserva Global Importados';
 // A quién le llega el aviso de cada pedido nuevo (el admin de la tienda).
 const AVISO_PEDIDOS_DEFAULT = 'rodrigoatatat@gmail.com';
 
@@ -29,33 +32,50 @@ function precio(n) {
   return '$' + Number(n || 0).toLocaleString('es-AR');
 }
 
+function crearTransporte() {
+  const user = (process.env.SMTP_USER || '').trim();
+  const host = (process.env.SMTP_HOST || 'smtp.gmail.com').trim();
+  let pass = process.env.SMTP_PASS || '';
+  // Google muestra la contraseña de aplicación con espacios ("abcd efgh ...").
+  if (host === 'smtp.gmail.com') pass = pass.replace(/\s/g, '');
+  if (!user || !pass) return null;
+
+  const port = Number(process.env.SMTP_PORT) || 465;
+  return {
+    remitente: `"${NOMBRE_REMITENTE}" <${user}>`,
+    transporte: nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass },
+      // Cortos: el mail sale mientras el cliente espera la confirmación.
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+      socketTimeout: 8000
+    })
+  };
+}
+
 async function enviarMail({ to, subject, html, replyTo }) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error(`Falta RESEND_API_KEY: no se envió "${subject}"`);
+  const smtp = crearTransporte();
+  if (!smtp) {
+    console.error(`Faltan SMTP_USER / SMTP_PASS: no se envió "${subject}"`);
     return false;
   }
 
-  const resp = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      from: process.env.RESEND_FROM_EMAIL || FROM_EMAIL_DEFAULT,
+  try {
+    await smtp.transporte.sendMail({
+      from: smtp.remitente,
       to,
       subject,
       html,
-      ...(replyTo ? { reply_to: replyTo } : {})
-    })
-  });
-
-  if (!resp.ok) {
-    console.error(`Error de Resend al enviar "${subject}":`, resp.status, await resp.text());
+      ...(replyTo ? { replyTo } : {})
+    });
+    return true;
+  } catch (err) {
+    console.error(`Error de SMTP al enviar "${subject}":`, err.code || '', err.response || err.message);
     return false;
   }
-  return true;
 }
 
 // ============================================================
