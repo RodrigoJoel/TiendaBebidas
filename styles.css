@@ -875,13 +875,16 @@ footer {
   align-items: center;
   justify-content: center;
   font-size: 1.1rem;
+  color: var(--text);
   cursor: pointer;
   transition: all 0.2s;
   text-decoration: none;
 }
+.social-btn svg { width: 18px; height: 18px; }
 .social-btn:hover {
   background: var(--blue);
   border-color: var(--blue);
+  color: #fff;
 }
 
 .footer-bottom {
@@ -897,6 +900,7 @@ footer {
   font-size: 0.8rem;
   color: var(--muted);
 }
+.footer-bottom strong { color: var(--text); font-weight: 600; }
 
 .payment-icons {
   display: flex;
