@@ -1236,3 +1236,72 @@ footer {
   margin-bottom: 0;
   color: var(--muted);
 }
+
+/* ───── AJUSTES RESPONSIVE (header fijo, anclas y celulares) ───── */
+/* El nav mide siempre 72px para que la barra de categorías (top: 72px)
+   no quede tapada, y los saltos a #secciones no caigan debajo del header. */
+html {
+  scroll-padding-top: 140px;
+}
+nav {
+  height: 72px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.nav-logo {
+  line-height: 1.1;
+}
+.shipping-bar {
+  gap: 0.5rem 3rem;
+}
+
+@media (max-width: 1100px) {
+  .nav-logo {
+    font-size: 1.4rem;
+    letter-spacing: 2px;
+  }
+}
+
+@media (max-width: 960px) {
+  .nav-links {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  nav {
+    padding: 0 1rem;
+  }
+  .nav-logo {
+    font-size: 1rem;
+    letter-spacing: 1px;
+    line-height: 1.15;
+  }
+  .nav-actions {
+    gap: 0.5rem;
+  }
+  .theme-toggle {
+    width: 36px;
+    height: 36px;
+  }
+  .btn-cart {
+    padding: 0.5rem 0.9rem;
+    white-space: nowrap;
+  }
+  .hero {
+    padding-top: 9.5rem;
+  }
+  .footer-top > * {
+    min-width: 0;
+  }
+  .footer-brand,
+  .footer-top .footer-col:nth-child(2) {
+    grid-column: 1 / -1;
+  }
+  .footer-brand .nav-logo {
+    font-size: 1.8rem;
+  }
+  .payment-icons {
+    flex-wrap: wrap;
+  }
+}

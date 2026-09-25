@@ -4,7 +4,7 @@ import { escucharProductos } from "./firebase.js";
 //  ESTADO
 // ============================================================
 let PRODUCTS = [];
-let cart = {};
+let cart = cargarCarritoGuardado();
 let currentFilter = 'Todos';
 
 // ============================================================
@@ -37,7 +37,7 @@ function cargarProductos(productos) {
     .sort((a, b) => Number(a.order ?? 9999) - Number(b.order ?? 9999));
 
   renderProducts(currentFilter);
-  actualizarContadoresCategorias();
+  actualizarPreciosDelCarrito();
 }
 
 function mostrarErrorFirebase() {
@@ -53,22 +53,6 @@ function mostrarErrorFirebase() {
 // Escucha cambios en tiempo real. Cuando el futuro panel admin agregue,
 // edite o desactive productos, el sitio se actualizará automáticamente.
 escucharProductos(cargarProductos, mostrarErrorFirebase);
-
-// ============================================================
-//  CATEGORÍAS
-// ============================================================
-function actualizarContadoresCategorias() {
-  document.querySelectorAll('.cat-card').forEach(card => {
-    const onclick = card.getAttribute('onclick') || '';
-    const match = onclick.match(/filterProducts\(['"](.+?)['"]\)/);
-    if (!match) return;
-
-    const category = match[1];
-    const count = PRODUCTS.filter(p => p.cat === category).length;
-    const counter = card.querySelector('.cat-count');
-    if (counter) counter.textContent = count ? `${count} productos` : '';
-  });
-}
 
 // ============================================================
 //  PRODUCTOS
@@ -134,7 +118,39 @@ function filterProducts(cat) {
 
 // ============================================================
 //  CARRITO
+//  Se guarda en localStorage ('gi_cart') en cada cambio, así se
+//  mantiene al pasar de una categoría a otra (cada una es una
+//  página distinta) y el checkout lo lee de ahí mismo.
 // ============================================================
+function cargarCarritoGuardado() {
+  try {
+    return JSON.parse(localStorage.getItem('gi_cart') || '{}') || {};
+  } catch {
+    return {};
+  }
+}
+
+function guardarCarrito() {
+  try {
+    localStorage.setItem('gi_cart', JSON.stringify(cart));
+  } catch {}
+}
+
+// Si el precio o el stock de un producto del carrito cambió desde que
+// se agregó, se actualiza con los datos vigentes.
+function actualizarPreciosDelCarrito() {
+  let cambio = false;
+  PRODUCTS.forEach(p => {
+    if (!cart[p.id]) return;
+    const limitado = p.stock !== null && p.stock !== undefined;
+    const qty = limitado ? Math.min(cart[p.id].qty, Number(p.stock)) : cart[p.id].qty;
+    if (qty > 0) cart[p.id] = { ...p, qty };
+    else delete cart[p.id];
+    cambio = true;
+  });
+  if (cambio) updateCart();
+}
+
 function addToCart(id) {
   const prod = PRODUCTS.find(p => String(p.id) === String(id));
   if (!prod) return;
@@ -163,8 +179,10 @@ function addToCart(id) {
 function changeQty(id, delta) {
   if (!cart[id]) return;
   if (delta > 0) {
-    const prod = PRODUCTS.find(p => String(p.id) === String(id));
-    const unlimited = !prod || prod.stock === null || prod.stock === undefined;
+    // Los productos de otras categorías no están en PRODUCTS: se usa el
+    // stock guardado junto con el carrito.
+    const prod = PRODUCTS.find(p => String(p.id) === String(id)) || cart[id];
+    const unlimited = prod.stock === null || prod.stock === undefined;
     if (!unlimited && cart[id].qty >= Number(prod.stock)) return;
   }
   cart[id].qty += delta;
@@ -172,7 +190,9 @@ function changeQty(id, delta) {
   updateCart();
 }
 
-function updateCart() {
+function updateCart({ guardar = true } = {}) {
+  if (guardar) guardarCarrito();
+
   const total = Object.values(cart).reduce((s, i) => s + Number(i.price) * i.qty, 0);
   const count = Object.values(cart).reduce((s, i) => s + i.qty, 0);
 
@@ -218,7 +238,7 @@ function toggleCart() {
 // ============================================================
 function irACheckout() {
   if (!Object.keys(cart).length) return;
-  localStorage.setItem('gi_cart', JSON.stringify(cart));
+  guardarCarrito();
   window.location.href = 'checkout.html';
 }
 
@@ -231,5 +251,18 @@ window.changeQty = changeQty;
 window.toggleCart = toggleCart;
 window.irACheckout = irACheckout;
 
+// Si el carrito cambia en otra pestaña, o se vuelve a esta página con
+// "atrás" después de agregar cosas en otra categoría, se recarga.
+window.addEventListener('storage', e => {
+  if (e.key !== 'gi_cart') return;
+  cart = cargarCarritoGuardado();
+  updateCart({ guardar: false });
+});
+window.addEventListener('pageshow', e => {
+  if (!e.persisted) return;
+  cart = cargarCarritoGuardado();
+  updateCart({ guardar: false });
+});
+
 // El carrito se inicializa aunque Firestore todavía esté cargando.
-updateCart();
+updateCart({ guardar: false });

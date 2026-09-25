@@ -104,40 +104,6 @@ nav {
 }
 .nav-links a:hover { color: var(--text); }
 
-/* ───── BARRA DE CATEGORÍAS ───── */
-.category-nav {
-  position: fixed;
-  top: 72px;
-  left: 0;
-  right: 0;
-  z-index: 99;
-  background: rgba(28, 43, 64, 0.92);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
-  padding: 0.65rem 2rem;
-  overflow-x: auto;
-  white-space: nowrap;
-  scrollbar-width: thin;
-}
-.category-nav::-webkit-scrollbar { height: 4px; }
-.category-nav::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-.category-nav-inner { display: inline-flex; gap: 0.5rem; }
-.cat-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.45rem 0.95rem;
-  border-radius: 50px;
-  border: 1px solid var(--border);
-  color: var(--muted);
-  text-decoration: none;
-  font-size: 0.82rem;
-  font-weight: 600;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-.cat-pill:hover { border-color: var(--blue); color: var(--text); }
-.cat-pill.active { background: var(--blue); border-color: var(--blue); color: #fff; }
 .nav-actions { display: flex; gap: 0.75rem; align-items: center; }
 
 /* ───── SUBNAV DE CATEGORÍAS ───── */
@@ -974,4 +940,37 @@ footer {
   color: var(--muted);
   min-width: 120px;
   text-align: center;
+}
+
+/* ───── AJUSTES RESPONSIVE (header fijo, anclas y celulares) ───── */
+/* El nav mide 72px y la barra de categorías arranca justo debajo; los
+   saltos a #secciones dejan lugar para ambos. */
+html { scroll-padding-top: 140px; }
+.nav-logo { line-height: 1.1; }
+.shipping-bar { gap: 0.5rem 3rem; }
+
+@media (max-width: 1100px) {
+  .nav-logo { font-size: 1.4rem; letter-spacing: 2px; }
+}
+
+@media (max-width: 960px) {
+  .nav-links { display: none; }
+}
+
+@media (max-width: 768px) {
+  nav { padding: 0 1rem; }
+  .nav-logo { font-size: 1rem; letter-spacing: 1px; line-height: 1.15; }
+  .nav-actions { gap: 0.5rem; }
+  .theme-toggle { width: 36px; height: 36px; }
+  .btn-cart { padding: 0.5rem 0.9rem; white-space: nowrap; }
+  .hero { padding-top: 9.5rem; }
+  .products-section { padding-left: 1.25rem; padding-right: 1.25rem; }
+  .products-main { width: 100%; min-width: 0; }
+  .pagination { gap: 0.75rem; flex-wrap: wrap; }
+  .page-info { min-width: 0; }
+  .footer-top > * { min-width: 0; }
+  .footer-brand,
+  .footer-top .footer-col:nth-child(2) { grid-column: 1 / -1; }
+  .footer-brand .nav-logo { font-size: 1.8rem; }
+  .payment-icons { flex-wrap: wrap; }
 }

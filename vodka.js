@@ -4,7 +4,7 @@ import { escucharProductos } from "./firebase.js";
 //  ESTADO
 // ============================================================
 let PRODUCTS = [];
-let cart = {};
+let cart = cargarCarritoGuardado();
 let currentSort = 'destacados';
 let filteredProducts = [];
 let currentPage = 1;
@@ -43,10 +43,11 @@ function cargarProductos(productos) {
     }))
     .sort((a, b) => Number(a.order ?? 9999) - Number(b.order ?? 9999));
 
-  filteredProducts = [...PRODUCTS];
-  currentPage = 1;
+  // Se re-aplican los filtros que estén marcados, así una actualización
+  // en tiempo real del catálogo no se los borra al usuario.
   renderFilters();
-  sortProducts(currentSort);
+  applyFilters();
+  actualizarPreciosDelCarrito();
 }
 
 function mostrarErrorFirebase() {
@@ -85,10 +86,15 @@ function renderFilters() {
 
   if (!brandContainer || !sizeContainer) return;
 
+  // Se conserva lo que ya estaba tildado: este render se repite al tocar
+  // "Ver más" y con cada actualización del catálogo.
+  const marcasTildadas = new Set(Array.from(document.querySelectorAll('.brand-check:checked')).map(el => el.value));
+  const tamanosTildados = new Set(Array.from(document.querySelectorAll('.size-check:checked')).map(el => el.value));
+
   const brands = getUniqueBrands();
   brandContainer.innerHTML = brands.map(b => `
     <label>
-      <input type="checkbox" class="brand-check" value="${b}" />
+      <input type="checkbox" class="brand-check" value="${b}" ${marcasTildadas.has(b) ? 'checked' : ''} />
       ${b}
     </label>
   `).join('');
@@ -107,7 +113,7 @@ function renderFilters() {
   const sizes = getUniqueSizes();
   sizeContainer.innerHTML = sizes.map(s => `
     <label>
-      <input type="checkbox" class="size-check" value="${s}" />
+      <input type="checkbox" class="size-check" value="${s}" ${tamanosTildados.has(s) ? 'checked' : ''} />
       ${s}
     </label>
   `).join('');
@@ -306,12 +312,11 @@ function openProductModal(id) {
 }
 
 function addToCartFromModal(id) {
-  addToCart(id);
+  const agregado = addToCart(id);
   const btn = document.getElementById('modalAddBtn');
   if (btn) {
-    const original = btn.textContent;
-    btn.textContent = 'Agregado ✓';
-    setTimeout(() => { btn.textContent = original; }, 900);
+    btn.textContent = agregado ? 'Agregado ✓' : 'No hay más stock';
+    setTimeout(() => { btn.textContent = 'Agregar al carrito 🛒'; }, 900);
   }
 }
 
@@ -336,14 +341,46 @@ function resetFilters() {
 
 // ============================================================
 //  CARRITO
+//  Se guarda en localStorage ('gi_cart') en cada cambio, así se
+//  mantiene al pasar de una categoría a otra (cada una es una
+//  página distinta) y el checkout lo lee de ahí mismo.
 // ============================================================
+function cargarCarritoGuardado() {
+  try {
+    return JSON.parse(localStorage.getItem('gi_cart') || '{}') || {};
+  } catch {
+    return {};
+  }
+}
+
+function guardarCarrito() {
+  try {
+    localStorage.setItem('gi_cart', JSON.stringify(cart));
+  } catch {}
+}
+
+// Si el precio o el stock de un producto del carrito cambió desde que
+// se agregó, se actualiza con los datos vigentes.
+function actualizarPreciosDelCarrito() {
+  let cambio = false;
+  PRODUCTS.forEach(p => {
+    if (!cart[p.id]) return;
+    const limitado = p.stock !== null && p.stock !== undefined;
+    const qty = limitado ? Math.min(cart[p.id].qty, Number(p.stock)) : cart[p.id].qty;
+    if (qty > 0) cart[p.id] = { ...p, qty };
+    else delete cart[p.id];
+    cambio = true;
+  });
+  if (cambio) updateCart();
+}
+
 function addToCart(id) {
   const prod = PRODUCTS.find(p => String(p.id) === String(id));
-  if (!prod) return;
+  if (!prod) return false;
 
   const unlimited = prod.stock === null || prod.stock === undefined;
   const currentQty = cart[id] ? cart[id].qty : 0;
-  if (!unlimited && currentQty >= Number(prod.stock)) return;
+  if (!unlimited && currentQty >= Number(prod.stock)) return false;
 
   cart[id] = cart[id]
     ? { ...cart[id], qty: cart[id].qty + 1 }
@@ -360,13 +397,16 @@ function addToCart(id) {
   }
 
   updateCart();
+  return true;
 }
 
 function changeQty(id, delta) {
   if (!cart[id]) return;
   if (delta > 0) {
-    const prod = PRODUCTS.find(p => String(p.id) === String(id));
-    const unlimited = !prod || prod.stock === null || prod.stock === undefined;
+    // Los productos de otras categorías no están en PRODUCTS: se usa el
+    // stock guardado junto con el carrito.
+    const prod = PRODUCTS.find(p => String(p.id) === String(id)) || cart[id];
+    const unlimited = prod.stock === null || prod.stock === undefined;
     if (!unlimited && cart[id].qty >= Number(prod.stock)) return;
   }
   cart[id].qty += delta;
@@ -374,7 +414,8 @@ function changeQty(id, delta) {
   updateCart();
 }
 
-function updateCart() {
+function updateCart({ guardar = true } = {}) {
+  if (guardar) guardarCarrito();
   const total = Object.values(cart).reduce((s, i) => s + Number(i.price) * i.qty, 0);
   const count = Object.values(cart).reduce((s, i) => s + i.qty, 0);
   document.getElementById('cartCount').textContent = count;
@@ -418,7 +459,7 @@ function toggleCart() {
 // ============================================================
 function irACheckout() {
   if (!Object.keys(cart).length) return;
-  localStorage.setItem('gi_cart', JSON.stringify(cart));
+  guardarCarrito();
   window.location.href = 'checkout.html';
 }
 
@@ -444,4 +485,17 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeProductModal();
 });
 
-updateCart();
+// Si el carrito cambia en otra pestaña, o se vuelve a esta página con
+// "atrás" después de agregar cosas en otra categoría, se recarga.
+window.addEventListener('storage', e => {
+  if (e.key !== 'gi_cart') return;
+  cart = cargarCarritoGuardado();
+  updateCart({ guardar: false });
+});
+window.addEventListener('pageshow', e => {
+  if (!e.persisted) return;
+  cart = cargarCarritoGuardado();
+  updateCart({ guardar: false });
+});
+
+updateCart({ guardar: false });
