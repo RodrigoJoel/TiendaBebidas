@@ -46,6 +46,8 @@
       <!-- ====== COLUMNA PRINCIPAL ====== -->
       <div class="checkout-main">
 
+        <div class="checkout-error hidden" id="checkoutError" role="alert"></div>
+
         <!-- PASO 1: DATOS DEL CLIENTE -->
         <section class="checkout-step active" id="step1">
           <h2 class="step-title">Datos de envío y contacto</h2>
@@ -55,7 +57,7 @@
             <div class="form-row">
               <div class="form-group">
                 <label for="fNombre">Nombre completo *</label>
-                <input type="text" id="fNombre" class="form-input" placeholder="Ej: María González" required />
+                <input type="text" id="fNombre" class="form-input" placeholder="Ej: María González" autocomplete="name" maxlength="60" pattern="[\p{L}\s'.\-]{3,60}" title="Solo letras, sin números ni símbolos" required />
               </div>
               <div class="form-group">
                 <label for="fDni">DNI *</label>
@@ -63,39 +65,54 @@
               </div>
             </div>
 
-            <div class="form-group">
-              <label for="fDireccion">Dirección (calle y altura) *</label>
-              <input type="text" id="fDireccion" class="form-input" placeholder="Ej: Av. San Martín 1234" required />
+            <div class="form-row form-row-address">
+              <div class="form-group">
+                <label for="fDireccion">Dirección (calle y altura) *</label>
+                <input type="text" id="fDireccion" class="form-input" placeholder="Ej: Av. San Martín 1234" autocomplete="address-line1" maxlength="120" required />
+              </div>
+              <div class="form-group">
+                <label for="fPiso">Piso / Depto (opcional)</label>
+                <input type="text" id="fPiso" class="form-input" placeholder="Ej: 3° B" autocomplete="address-line2" maxlength="40" />
+              </div>
             </div>
 
-            <div class="form-row">
+            <div class="form-row form-row-3">
               <div class="form-group">
                 <label for="fCiudad">Ciudad *</label>
-                <input type="text" id="fCiudad" class="form-input" placeholder="Ej: Resistencia" required />
+                <input type="text" id="fCiudad" class="form-input" placeholder="Ej: Resistencia" autocomplete="address-level2" maxlength="80" required />
               </div>
               <div class="form-group">
                 <label for="fProvincia">Provincia *</label>
-                <select id="fProvincia" class="form-input" required>
+                <select id="fProvincia" class="form-input" autocomplete="address-level1" required>
                   <option value="" disabled selected>Elegí tu provincia</option>
                 </select>
+              </div>
+              <div class="form-group">
+                <label for="fCp">Código postal *</label>
+                <input type="text" id="fCp" class="form-input" placeholder="Ej: 3500" autocomplete="postal-code" maxlength="8" pattern="[0-9]{4}|[A-Za-z][0-9]{4}[A-Za-z]{3}" title="4 números (ej: 3500) o el formato nuevo (ej: H3500ABC)" required />
               </div>
             </div>
 
             <div class="form-row">
               <div class="form-group">
                 <label for="fEmail">Email *</label>
-                <input type="email" id="fEmail" class="form-input" placeholder="tu@mail.com" required />
+                <input type="email" id="fEmail" class="form-input" placeholder="tu@mail.com" autocomplete="email" maxlength="120" required />
               </div>
               <div class="form-group">
                 <label for="fCelular">Celular *</label>
-                <input type="tel" id="fCelular" class="form-input" placeholder="Ej: 11 2345 6789" required />
+                <input type="tel" id="fCelular" class="form-input" placeholder="Ej: 11 2345 6789" autocomplete="tel" maxlength="30" pattern="[0-9\s\(\)+\-]{8,30}" title="Número con código de área, ej: 11 2345 6789" required />
               </div>
             </div>
 
             <div class="form-group">
               <label for="fMensaje">Mensaje adicional (opcional)</label>
-              <textarea id="fMensaje" class="form-input" rows="2" placeholder="Ej: dejar en portería, entregar por la tarde..."></textarea>
+              <textarea id="fMensaje" class="form-input" rows="2" maxlength="500" placeholder="Ej: dejar en portería, entregar por la tarde..."></textarea>
             </div>
+
+            <label class="check-legal">
+              <input type="checkbox" id="fMayorEdad" required />
+              <span>Declaro ser mayor de 18 años y acepto los <a href="terminos.html" target="_blank" rel="noopener">Términos y condiciones</a>.</span>
+            </label>
 
             <button type="submit" class="btn-primary btn-full">Siguiente: Medios de pago →</button>
           </form>
@@ -108,7 +125,7 @@
 
           <div class="payment-methods">
             <div class="payment-option selected" data-method="mp" onclick="seleccionarMedioPago('mp')">
-              <img class="pay-logo" alt="Mercado Pago" src="https://http2.mlstatic.com/frontend-assets/mp-web-navigation/ui-navigation/6.6.20/mercadopago/logo__large@2x.png" />
+              <div class="pay-icon">💳</div>
               <div>
                 <strong>Mercado Pago</strong>
                 <span>Tarjetas de crédito y débito, cuotas, dinero en cuenta, Rapipago/Pago Fácil</span>
@@ -119,7 +136,7 @@
               <div class="pay-icon">🏦</div>
               <div>
                 <strong>Transferencia bancaria</strong>
-                <span>Transferís por CVU/alias y confirmás el pedido por WhatsApp</span>
+                <span>Confirmás el pedido, transferís por CVU/alias y nos mandás el comprobante por WhatsApp</span>
               </div>
               <div class="payment-check">✓</div>
             </div>
@@ -138,7 +155,7 @@
             <div class="transfer-row"><span>CUIT/CUIL</span><strong>23-37707364-9</strong></div>
             <div class="transfer-row"><span>CVU</span><strong>0000003100033338552336</strong></div>
             <div class="transfer-row"><span>Alias</span><strong>reservaglobal</strong></div>
-            <p class="transfer-note">Transferí el monto total exacto y después tocá el botón de abajo para avisarnos por WhatsApp con el comprobante — así confirmamos tu pedido.</p>
+            <p class="transfer-note">Tocá "Confirmar pedido" para registrarlo. Después transferí el monto total exacto y mandanos el comprobante por WhatsApp: despachamos apenas se acredita.</p>
           </div>
 
           <div class="order-summary">
@@ -152,19 +169,24 @@
           <div class="step-actions">
             <button type="button" class="btn-outline" onclick="volverAPasoUno()">← Volver</button>
             <button type="button" class="btn-primary" id="btnPagarMP" onclick="pagarConMercadoPago()">Pagar con Mercado Pago 🔒</button>
-            <button type="button" class="btn-primary hidden" id="btnConfirmarTransferencia" onclick="confirmarTransferencia()">Ya transferí, avisar por WhatsApp 📲</button>
+            <button type="button" class="btn-primary hidden" id="btnConfirmarTransferencia" onclick="confirmarTransferencia()">Confirmar pedido 🏦</button>
           </div>
         </section>
 
         <!-- PASO 3: CONFIRMACIÓN -->
         <section class="checkout-step" id="step3">
           <div class="confirmation">
-            <div class="confirmation-icon">✅</div>
+            <div class="confirmation-icon" id="confirmationIcon">✅</div>
             <h2 id="confirmationTitle">¡Pedido realizado con éxito!</h2>
             <p class="order-number">Pedido N° <strong id="orderNumber">—</strong></p>
-            <p class="confirmation-text" id="confirmationText">
-              Te enviamos un mail a <strong id="confirmEmail">—</strong> con el detalle de tu compra y los pasos a seguir.
-            </p>
+            <p class="confirmation-text" id="confirmationText"></p>
+
+            <!-- Solo para transferencia: acá se muestran los datos de la cuenta -->
+            <div class="confirm-transfer hidden" id="confirmTransfer">
+              <p class="confirm-transfer-total">Total a transferir: <strong id="confirmTransferTotal">$0</strong></p>
+              <a class="btn-whatsapp" id="btnWhatsappComprobante" href="#" target="_blank" rel="noopener">Enviar comprobante por WhatsApp 📲</a>
+            </div>
+
             <p class="confirmation-note" id="confirmationNote">Guardá el número de pedido por cualquier consulta sobre tu envío.</p>
             <a href="index.html" class="btn-primary">Volver a la tienda</a>
           </div>
