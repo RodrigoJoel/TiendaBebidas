@@ -1,8 +1,8 @@
 // ============================================================
 //  Pedidos — lógica común de las funciones de /api.
 //  Valida los datos del cliente, arma el detalle con precios y
-//  stock leídos de Firestore (nunca los del navegador) y guarda
-//  el pedido en la colección "pedidos".
+//  stock leídos de Firestore (nunca los del navegador), descuenta
+//  el stock y guarda el pedido en la colección "pedidos".
 // ============================================================
 const crypto = require('crypto');
 const { FieldValue } = require('firebase-admin/firestore');
@@ -81,10 +81,16 @@ function validarCliente(datos = {}) {
   return cliente;
 }
 
+// Stock vacío o null = ilimitado (igual que en el sitio y el panel).
+function leerStock(prod) {
+  return prod.stock === null || prod.stock === undefined || prod.stock === '' ? null : Number(prod.stock);
+}
+
 // ============================================================
 //  DETALLE DEL PEDIDO (precios y stock desde Firestore)
+//  Con `tx` lee los productos dentro de esa transacción.
 // ============================================================
-async function armarDetalle(db, cartItems) {
+async function armarDetalle(db, cartItems, tx = null) {
   if (!Array.isArray(cartItems) || !cartItems.length) {
     throw new ErrorPedido('El carrito está vacío.');
   }
@@ -100,7 +106,7 @@ async function armarDetalle(db, cartItems) {
   if (!cantidades.size) throw new ErrorPedido('El carrito está vacío.');
 
   const refs = [...cantidades.keys()].map(id => db.collection('productos').doc(id));
-  const snaps = await db.getAll(...refs);
+  const snaps = await (tx || db).getAll(...refs);
 
   const items = snaps.map(snap => {
     if (!snap.exists) {
@@ -111,7 +117,7 @@ async function armarDetalle(db, cartItems) {
     const nombre = String(prod.name || 'Producto').slice(0, 200);
     const cantidad = cantidades.get(snap.id);
     const precio = Number(prod.price) || 0;
-    const stock = prod.stock === null || prod.stock === undefined || prod.stock === '' ? null : Number(prod.stock);
+    const stock = leerStock(prod);
 
     if (prod.active === false) {
       throw new ErrorPedido(`"${nombre}" ya no está a la venta. Quitalo del carrito y volvé a intentar.`, 409);
@@ -144,6 +150,39 @@ async function armarDetalle(db, cartItems) {
 }
 
 // ============================================================
+//  STOCK
+//  Se descuenta dentro de una transacción, así dos compras al mismo
+//  tiempo no se pueden llevar la misma unidad. Firestore exige leer
+//  todo antes de escribir: llamarla después de las demás lecturas.
+//  Devuelve lo que se descontó de cada producto (lo que se repone si
+//  se cancela el pedido) y lo que faltó. Nunca deja stock negativo.
+// ============================================================
+async function descontarStock(tx, db, items) {
+  const refs = items.map(i => db.collection('productos').doc(i.id));
+  const snaps = await tx.getAll(...refs);
+  const descontado = [];
+  const faltante = [];
+
+  snaps.forEach((snap, n) => {
+    const item = items[n];
+    // Producto borrado o con stock ilimitado: no hay nada que descontar.
+    const stock = snap.exists ? leerStock(snap.data()) : null;
+    if (stock === null) return;
+
+    const quitar = Math.min(item.cantidad, Math.max(stock, 0));
+    if (quitar > 0) {
+      tx.update(refs[n], { stock: stock - quitar });
+      descontado.push({ id: item.id, cantidad: quitar });
+    }
+    if (quitar < item.cantidad) {
+      faltante.push({ id: item.id, nombre: item.nombre, cantidad: item.cantidad - quitar });
+    }
+  });
+
+  return { descontado, faltante };
+}
+
+// ============================================================
 //  GUARDADO
 // ============================================================
 function generarNumeroPedido() {
@@ -153,12 +192,15 @@ function generarNumeroPedido() {
 }
 
 // El número de pedido es también el id del documento: pedidos/GI-XXXX.
-async function guardarPedido(db, pedido) {
-  await db.collection('pedidos').doc(pedido.numero).create({
+// Con `tx` se crea dentro de esa transacción.
+function guardarPedido(db, pedido, tx = null) {
+  const ref = db.collection('pedidos').doc(pedido.numero);
+  const datos = {
     ...pedido,
     creadoEn: FieldValue.serverTimestamp(),
     actualizadoEn: FieldValue.serverTimestamp()
-  });
+  };
+  return tx ? tx.create(ref, datos) : ref.create(datos);
 }
 
 // Respuesta de error común a todas las funciones de pedidos.
@@ -176,6 +218,7 @@ module.exports = {
   ErrorPedido,
   validarCliente,
   armarDetalle,
+  descontarStock,
   generarNumeroPedido,
   guardarPedido,
   responderError

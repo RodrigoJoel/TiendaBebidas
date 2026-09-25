@@ -27,7 +27,10 @@ window.currentPage = window.currentPage || 'dashboard';
 // ─────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────
-function esc(v) { return String(v ?? '').replace(/"/g, '&quot;'); }
+// Escapa todo el HTML: los pedidos traen texto escrito por el cliente.
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+}
 function fmt(n) { return '$' + Number(n || 0).toLocaleString('es-AR'); }
 
 function setSaving(state) {
@@ -123,19 +126,48 @@ function stockPill(stock) {
 function navigate(page, el) {
   window.currentPage = page;
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el = el || document.querySelector(`.nav-item[data-page="${page}"]`);
   if (el) el.classList.add('active');
+  document.querySelector('.sidebar')?.classList.remove('open');
   render(page);
+  window.scrollTo(0, 0);
 }
 window.navigate = navigate;
+
+// En celular el menú lateral está escondido y se abre con ☰.
+function toggleSidebar() {
+  document.querySelector('.sidebar')?.classList.toggle('open');
+}
+window.toggleSidebar = toggleSidebar;
+
+document.addEventListener('click', (e) => {
+  const sidebar = document.querySelector('.sidebar');
+  if (sidebar?.classList.contains('open') && !e.target.closest('.sidebar, .menu-btn')) sidebar.classList.remove('open');
+});
 
 function render(page) {
   const main = document.getElementById('mainContent');
   if (!main) return;
-  if (page === 'dashboard') { main.innerHTML = pageDashboard(); return; }
-  if (page === 'carousels') { main.innerHTML = pageCarousels(); return; }
-  if (page === 'todos') { main.innerHTML = pageCategoryManager('todos'); return; }
-  if (window.CATEGORY_CONFIG[page]) { main.innerHTML = pageCategoryManager(page); return; }
-  main.innerHTML = '<p style="color:var(--muted)">Página no encontrada</p>';
+  actualizarContadorPedidos();
+  if (document.getElementById('orderModal')?.classList.contains('open')) renderPedidoModal();
+
+  // Los datos llegan en tiempo real: si se estaba escribiendo en un
+  // buscador, se mantiene el foco al redibujar.
+  const activo = document.activeElement;
+  const foco = activo && activo.id && main.contains(activo) ? { id: activo.id, pos: activo.selectionStart } : null;
+
+  if (page === 'dashboard') main.innerHTML = pageDashboard();
+  else if (page === 'pedidos') main.innerHTML = pagePedidos();
+  else if (page === 'carousels') main.innerHTML = pageCarousels();
+  else if (page === 'todos') main.innerHTML = pageCategoryManager('todos');
+  else if (window.CATEGORY_CONFIG[page]) main.innerHTML = pageCategoryManager(page);
+  else main.innerHTML = '<p style="color:var(--muted)">Página no encontrada</p>';
+
+  const input = foco && document.getElementById(foco.id);
+  if (input) {
+    input.focus();
+    if (foco.pos !== null && foco.pos !== undefined && input.setSelectionRange) input.setSelectionRange(foco.pos, foco.pos);
+  }
 }
 window.render = render;
 
@@ -149,6 +181,7 @@ function pageDashboard() {
   const catsConProductos = window.CATEGORY_KEYS.filter(c => all.some(p => p.category === c)).length;
 
   const ultimos = [...all].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 6);
+  const paraAtender = pedidosParaAtender();
 
   return `
     <div class="page-header">
@@ -157,13 +190,19 @@ function pageDashboard() {
         <div class="page-sub">Catálogo sincronizado en tiempo real con Firebase</div>
       </div>
     </div>
+    ${paraAtender ? `
+    <button type="button" class="orders-alert" onclick="navigate('pedidos',null)">
+      <span>🧾</span>
+      <span>Tenés <strong>${paraAtender} ${paraAtender === 1 ? 'pedido' : 'pedidos'}</strong> para atender</span>
+      <span class="go">Ver pedidos →</span>
+    </button>` : ''}
     <div class="stats-row">
       <div class="stat-card"><div class="stat-icon">🍾</div><div class="stat-info"><strong>${all.length}</strong><span>Productos totales</span></div></div>
       <div class="stat-card"><div class="stat-icon green">✅</div><div class="stat-info"><strong>${active}</strong><span>Activos en el sitio</span></div></div>
       <div class="stat-card"><div class="stat-icon red">❌</div><div class="stat-info"><strong>${sinStock}</strong><span>Sin stock</span></div></div>
       <div class="stat-card"><div class="stat-icon yellow">🗂️</div><div class="stat-info"><strong>${catsConProductos}/${window.CATEGORY_KEYS.length}</strong><span>Categorías con productos</span></div></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="dash-grid">
       <div class="card">
         <div class="card-header"><div class="card-title"><span>⚡</span> Accesos rápidos</div></div>
         <div class="card-body">
@@ -194,6 +233,430 @@ function pageDashboard() {
       </div>
     </div>`;
 }
+
+// ─────────────────────────────────────────────
+// PEDIDOS
+// Los crean las funciones de /api cuando alguien compra. Acá se ven en
+// tiempo real y se les cambia el estado. Cancelar repone el stock que
+// el pedido había descontado, en la misma transacción.
+// ─────────────────────────────────────────────
+const ESTADOS_PEDIDO = {
+  esperando_transferencia: { label: 'Esperando transferencia', icon: '🏦', clase: 'st-wait' },
+  pagado:                  { label: 'Pagado · para enviar',    icon: '✅', clase: 'st-ok' },
+  revisar_pago:            { label: 'Revisar',                 icon: '⚠️', clase: 'st-alert' },
+  enviado:                 { label: 'Enviado',                 icon: '🚚', clase: 'st-done' },
+  pendiente_pago:          { label: 'Sin pagar',               icon: '⌛', clase: 'st-muted' },
+  cancelado:               { label: 'Cancelado',               icon: '✖', clase: 'st-muted' }
+};
+const PEDIDOS_PARA_ATENDER = ['esperando_transferencia', 'pagado', 'revisar_pago'];
+
+// "Sin pagar" son los que fueron a Mercado Pago y no pagaron (o
+// abandonaron): no aparecen en "Para atender".
+const VISTAS_PEDIDOS = [
+  { key: 'atender',                 label: 'Para atender',             estados: PEDIDOS_PARA_ATENDER },
+  { key: 'esperando_transferencia', label: 'Esperando transferencia',  estados: ['esperando_transferencia'] },
+  { key: 'pagado',                  label: 'Para enviar',              estados: ['pagado'] },
+  { key: 'revisar_pago',            label: 'Revisar',                  estados: ['revisar_pago'] },
+  { key: 'enviado',                 label: 'Enviados',                 estados: ['enviado'] },
+  { key: 'pendiente_pago',          label: 'Sin pagar (Mercado Pago)', estados: ['pendiente_pago'] },
+  { key: 'cancelado',               label: 'Cancelados',               estados: ['cancelado'] },
+  { key: 'todos',                   label: 'Todos',                    estados: null }
+];
+
+const ESTADOS_PAGO_MP = {
+  approved: 'aprobado', pending: 'pendiente', in_process: 'en proceso', authorized: 'autorizado',
+  rejected: 'rechazado', cancelled: 'cancelado', refunded: 'devuelto', charged_back: 'contracargo'
+};
+
+window.pedidosFiltro = window.pedidosFiltro || { vista: 'atender', busqueda: '' };
+window.pedidoAbierto = null;
+window.notasBorrador = {};
+
+const TITULO_PANEL = document.title;
+
+function pedidosParaAtender() {
+  return (window.DATA.pedidos || []).filter(p => PEDIDOS_PARA_ATENDER.includes(p.estado)).length;
+}
+
+// Número en el menú y en la pestaña del navegador: "(2) Reserva Global..."
+function actualizarContadorPedidos() {
+  const n = pedidosParaAtender();
+  const badge = document.getElementById('navPedidosCount');
+  if (badge) {
+    badge.textContent = n;
+    badge.classList.toggle('hidden', !n);
+  }
+  document.title = (n ? `(${n}) ` : '') + TITULO_PANEL;
+}
+
+function estadoPedido(p) {
+  return ESTADOS_PEDIDO[p.estado] || { label: p.estado || '—', icon: '•', clase: 'st-muted' };
+}
+
+// Firestore devuelve Timestamp; por las dudas también acepta texto o número.
+function aFecha(v) {
+  if (!v) return null;
+  const d = typeof v.toDate === 'function' ? v.toDate() : new Date(v);
+  return isNaN(d) ? null : d;
+}
+function fechaHora(v, conAnio = false) {
+  const d = aFecha(v);
+  if (!d) return '';
+  return d.toLocaleString('es-AR', { day: '2-digit', month: '2-digit', ...(conAnio ? { year: 'numeric' } : {}), hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+}
+
+function normalizar(t) {
+  return String(t ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function unidadesDescontadas(p) {
+  return (p.stockDescontado || []).reduce((s, d) => s + (Number(d.cantidad) || 0), 0);
+}
+
+// Link de WhatsApp al celular del cliente. Los celulares se escriben de
+// mil formas (0299 15-412-3456, +54 9 11 ...): se lleva a 549 + código
+// de área + número (10 dígitos). Si no se puede, no se muestra el link.
+function whatsappCliente(celular) {
+  let d = String(celular || '').replace(/\D/g, '');
+  if (d.startsWith('00')) d = d.slice(2);
+  if (d.startsWith('54')) {
+    d = d.slice(2);
+    if (d.startsWith('9')) d = d.slice(1);
+  }
+  if (d.startsWith('0')) d = d.slice(1);
+  if (d.length === 12) {
+    const k = [2, 3, 4].find(i => d.slice(i, i + 2) === '15');
+    if (k !== undefined) d = d.slice(0, k) + d.slice(k + 2);
+  }
+  return d.length === 10 ? `https://wa.me/549${d}` : null;
+}
+
+function pagePedidos() {
+  const encabezado = `
+    <div class="page-header">
+      <div>
+        <div class="page-title">PEDIDOS <span>DE LA TIENDA</span></div>
+        <div class="page-sub">Se actualizan solos cuando entra una compra. Tocá un pedido para ver el detalle y cambiarle el estado.</div>
+      </div>
+    </div>`;
+
+  const error = window.DATA.pedidosError;
+  if (error) {
+    return encabezado + `
+      <div class="order-note alert">
+        ${error === 'permission-denied'
+          ? '🔒 Firestore todavía no deja leer los pedidos: falta publicar la regla de <code>pedidos</code> en Firebase Console → Firestore Database → Reglas (está en FIREBASE_SETUP.md, sección 6). Después de publicarla, recargá esta página.'
+          : `No se pudieron cargar los pedidos (${esc(error)}). Probá recargar la página.`}
+      </div>`;
+  }
+
+  const todos = window.DATA.pedidos || [];
+  const filtro = window.pedidosFiltro;
+  const vista = VISTAS_PEDIDOS.find(v => v.key === filtro.vista) || VISTAS_PEDIDOS[0];
+  const termino = normalizar(filtro.busqueda).trim();
+  const lista = todos.filter(p => {
+    if (vista.estados && !vista.estados.includes(p.estado)) return false;
+    if (!termino) return true;
+    const c = p.cliente || {};
+    return normalizar([p.numero, c.nombre, c.email, c.dni, c.celular, c.ciudad].join(' ')).includes(termino);
+  });
+
+  const chips = VISTAS_PEDIDOS.map(v => {
+    const n = v.estados ? todos.filter(p => v.estados.includes(p.estado)).length : todos.length;
+    return `<button type="button" class="chip ${v.key === vista.key ? 'active' : ''}" onclick="setPedidosFiltro('vista','${v.key}')">${v.label}<span class="n">${n}</span></button>`;
+  }).join('');
+
+  const vacio = !todos.length
+    ? 'Todavía no entró ningún pedido.'
+    : termino
+      ? 'Ningún pedido coincide con la búsqueda.'
+      : vista.key === 'atender' ? '🎉 No hay pedidos para atender.' : 'No hay pedidos en esta vista.';
+
+  return encabezado + `
+    <div class="card">
+      <div class="card-body">
+        <div class="chip-row">${chips}</div>
+        <div class="field">
+          <input id="pedidosBusqueda" placeholder="Buscar número, nombre, email, DNI..." value="${esc(filtro.busqueda)}" oninput="setPedidosFiltro('busqueda', this.value)"/>
+        </div>
+        <div class="order-list">
+          ${lista.length ? lista.map(filaPedido).join('') : `<p class="empty">${vacio}</p>`}
+        </div>
+        ${todos.length >= 300 ? '<p class="empty">Se muestran los últimos 300 pedidos.</p>' : ''}
+      </div>
+    </div>`;
+}
+
+function filaPedido(p) {
+  const st = estadoPedido(p);
+  const c = p.cliente || {};
+  const unidades = (p.items || []).reduce((s, i) => s + (Number(i.cantidad) || 0), 0);
+  const apagado = p.estado === 'cancelado' || p.estado === 'pendiente_pago';
+  return `
+    <button type="button" class="order-item ${apagado ? 'is-muted' : ''}" data-numero="${esc(p.numero)}" onclick="abrirPedido(this.dataset.numero)">
+      <div class="order-main">
+        <div><span class="order-num">${esc(p.numero)}</span><span class="order-date">${esc(fechaHora(p.creadoEn))}</span></div>
+        <div class="order-sub"><strong>${esc(c.nombre)}</strong> — ${esc(c.ciudad)}, ${esc(c.provincia)}</div>
+        <div class="order-sub">${unidades} ${unidades === 1 ? 'unidad' : 'unidades'} · ${p.medioPago === 'transferencia' ? '🏦 Transferencia' : '💳 Mercado Pago'}</div>
+      </div>
+      <div class="order-side">
+        <div class="order-total">${fmt(p.total)}</div>
+        <span class="st-pill ${st.clase}">${st.icon} ${esc(st.label)}</span>
+      </div>
+    </button>`;
+}
+
+function setPedidosFiltro(clave, valor) {
+  window.pedidosFiltro[clave] = valor;
+  render('pedidos');
+}
+window.setPedidosFiltro = setPedidosFiltro;
+
+// ── Detalle del pedido (modal) ──
+function abrirPedido(numero) {
+  window.pedidoAbierto = numero;
+  renderPedidoModal();
+  const modal = document.getElementById('orderModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('open');
+}
+window.abrirPedido = abrirPedido;
+
+function closeOrderModal() {
+  window.pedidoAbierto = null;
+  const modal = document.getElementById('orderModal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  modal.classList.add('hidden');
+}
+window.closeOrderModal = closeOrderModal;
+
+function avisoPedido(p) {
+  switch (p.estado) {
+    case 'revisar_pago':
+      return `<div class="order-note alert">⚠️ ${esc(p.motivoRevision || 'Revisá el pago antes de enviar.')}</div>`;
+    case 'esperando_transferencia':
+      return `<div class="order-note info">Cuando te llegue la transferencia de <strong>${fmt(p.total)}</strong> (el cliente manda el comprobante por WhatsApp), marcalo como pagado. Si no paga, cancelalo y el stock vuelve a estar disponible.</div>`;
+    case 'pendiente_pago':
+      return `<div class="order-note info">El cliente fue a pagar con Mercado Pago pero el pago todavía no se aprobó. Si se aprueba, el pedido pasa solo a "Pagado". Si quedó abandonado, podés cancelarlo (no reservó stock).</div>`;
+    case 'pagado':
+      return `<div class="order-note info">Listo para preparar y enviar. Cuando lo despaches, marcalo como enviado.</div>`;
+    default:
+      return '';
+  }
+}
+
+function fechasPedido(p) {
+  const partes = [`Creado el ${fechaHora(p.creadoEn, true)}`];
+  if (p.pagadoEn && p.estado !== 'esperando_transferencia') partes.push(`pagado el ${fechaHora(p.pagadoEn, true)}`);
+  if (p.estado === 'enviado' && p.enviadoEn) partes.push(`enviado el ${fechaHora(p.enviadoEn, true)}`);
+  if (p.estado === 'cancelado' && p.canceladoEn) partes.push(`cancelado el ${fechaHora(p.canceladoEn, true)}`);
+  return esc(partes.join(' · '));
+}
+
+function textoStock(p) {
+  const n = unidadesDescontadas(p);
+  if (n) return n === 1
+    ? '1 unidad descontada del stock (vuelve al stock si cancelás el pedido)'
+    : `${n} unidades descontadas del stock (vuelven al stock si cancelás el pedido)`;
+  if (p.estado === 'pendiente_pago') return 'Se descuenta cuando se apruebe el pago';
+  if (p.estado === 'cancelado') return 'Nada descontado (si tenía, ya volvió al stock)';
+  return 'Nada descontado (productos sin límite de stock)';
+}
+
+function accionesPedido(p) {
+  const boton = (hacia, texto, clase) =>
+    `<button type="button" class="btn ${clase}" data-numero="${esc(p.numero)}" data-desde="${esc(p.estado)}" data-hacia="${hacia}" onclick="cambiarEstadoPedido(this.dataset.numero, this.dataset.desde, this.dataset.hacia)">${texto}</button>`;
+  const cancelar = boton('cancelado', '✖ Cancelar pedido', 'btn-danger');
+
+  switch (p.estado) {
+    case 'esperando_transferencia': return boton('pagado', '✅ Llegó la transferencia', 'btn-success') + cancelar;
+    case 'pendiente_pago':          return cancelar;
+    case 'pagado':                  return boton('enviado', '🚚 Marcar enviado', 'btn-primary') + cancelar;
+    case 'revisar_pago':            return boton('pagado', '✅ Ya lo revisé: está pagado', 'btn-success') + cancelar;
+    case 'enviado':                 return boton('pagado', '↩ Volver a "para enviar"', 'btn-ghost');
+    default:                        return '';
+  }
+}
+
+function renderPedidoModal() {
+  const body = document.getElementById('orderModalBody');
+  if (!body) return;
+  const p = (window.DATA.pedidos || []).find(x => x.numero === window.pedidoAbierto);
+  if (!p) {
+    body.innerHTML = '<p class="empty">No se encontró el pedido.</p>';
+    return;
+  }
+
+  // Si se estaba escribiendo la nota, se mantiene el foco al redibujar.
+  const escribiendoNota = document.activeElement?.id === 'pedidoNota';
+  const st = estadoPedido(p);
+  const c = p.cliente || {};
+  const wa = whatsappCliente(c.celular);
+  const pago = p.mercadoPago?.pago;
+  const nota = window.notasBorrador[p.numero] ?? p.notaAdmin ?? '';
+  const acciones = accionesPedido(p);
+
+  body.innerHTML = `
+    <div class="order-head">
+      <div class="modal-title">PEDIDO <span>${esc(p.numero)}</span></div>
+      <span class="st-pill ${st.clase}">${st.icon} ${esc(st.label)}</span>
+    </div>
+    <div class="order-dates">${fechasPedido(p)}</div>
+    ${avisoPedido(p)}
+
+    <div class="order-grid">
+      <div class="order-box">
+        <h4>Cliente</h4>
+        <dl class="kv">
+          <dt>Nombre</dt><dd>${esc(c.nombre)}</dd>
+          <dt>DNI</dt><dd>${esc(c.dni)}</dd>
+          <dt>Email</dt><dd><a href="mailto:${esc(c.email)}">${esc(c.email)}</a></dd>
+          <dt>Celular</dt><dd><a href="tel:${esc(String(c.celular || '').replace(/[^\d+]/g, ''))}">${esc(c.celular)}</a>${wa ? ` · <a href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}</dd>
+        </dl>
+      </div>
+      <div class="order-box">
+        <h4>Entrega</h4>
+        <dl class="kv">
+          <dt>Dirección</dt><dd>${esc(c.direccion)}${c.piso ? `, ${esc(c.piso)}` : ''}</dd>
+          <dt>Ciudad</dt><dd>${esc(c.ciudad)}, ${esc(c.provincia)}</dd>
+          <dt>CP</dt><dd>${esc(c.cp)}</dd>
+          ${c.mensaje ? `<dt>Mensaje</dt><dd>${esc(c.mensaje)}</dd>` : ''}
+        </dl>
+      </div>
+    </div>
+
+    <div class="order-box">
+      <h4>Productos</h4>
+      <table class="order-items">
+        ${(p.items || []).map(i => `
+          <tr><td>${Number(i.cantidad) || 0}× ${esc(i.nombre)}${i.tamano ? ` <span class="muted">(${esc(i.tamano)})</span>` : ''}</td><td>${fmt(i.subtotal)}</td></tr>`).join('')}
+        <tr class="sum"><td>Envío</td><td>${fmt(p.envio)}</td></tr>
+        <tr class="total"><td>Total</td><td>${fmt(p.total)}</td></tr>
+      </table>
+    </div>
+
+    <div class="order-grid">
+      <div class="order-box">
+        <h4>Pago y stock</h4>
+        <dl class="kv">
+          <dt>Medio</dt><dd>${p.medioPago === 'transferencia' ? '🏦 Transferencia' : '💳 Mercado Pago'}</dd>
+          ${pago ? `<dt>Pago MP</dt><dd>N° ${esc(pago.id)} · ${esc(ESTADOS_PAGO_MP[pago.estado] || pago.estado)} · ${fmt(pago.monto)}</dd>` : ''}
+          <dt>Stock</dt><dd>${esc(textoStock(p))}</dd>
+        </dl>
+      </div>
+      <div class="order-box">
+        <h4>Nota interna</h4>
+        <div class="field" style="margin-bottom:8px">
+          <textarea id="pedidoNota" maxlength="1000" placeholder="Ej: transferencia recibida el 3/10 · enviado por Andreani, seguimiento 123..." oninput="window.notasBorrador[window.pedidoAbierto] = this.value">${esc(nota)}</textarea>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="guardarNotaPedido()">💾 Guardar nota</button>
+      </div>
+    </div>
+
+    ${acciones ? `<div class="order-actions btn-row">${acciones}</div>` : ''}
+  `;
+
+  if (escribiendoNota) {
+    const area = document.getElementById('pedidoNota');
+    area.focus();
+    area.setSelectionRange(area.value.length, area.value.length);
+  }
+}
+
+const MENSAJES_ESTADO = {
+  pagado: '✅ Pedido marcado como pagado',
+  enviado: '🚚 Pedido marcado como enviado',
+  cancelado: '✖ Pedido cancelado'
+};
+
+// Cambia el estado en una transacción: si el pedido cambió mientras se
+// lo miraba (por ejemplo, llegó el pago de Mercado Pago), no se pisa.
+async function cambiarEstadoPedido(numero, desde, hacia) {
+  const p = (window.DATA.pedidos || []).find(x => x.numero === numero);
+  if (!p) return;
+
+  if (hacia === 'cancelado') {
+    const unidades = unidadesDescontadas(p);
+    const yaPago = p.medioPago === 'mercadopago'
+      ? Boolean(p.mercadoPago?.pagoAprobadoId)
+      : p.estado === 'pagado' || p.estado === 'revisar_pago';
+    let pregunta = `¿Cancelar el pedido ${numero}?`;
+    if (unidades) pregunta += `\n\n${unidades === 1 ? 'Vuelve 1 unidad' : `Vuelven ${unidades} unidades`} al stock.`;
+    if (yaPago) pregunta += '\n\nOjo: el cliente ya pagó. La devolución de la plata la tenés que hacer vos (desde Mercado Pago o por transferencia).';
+    if (!confirm(pregunta)) return;
+  }
+
+  const botones = document.querySelectorAll('.order-actions button');
+  botones.forEach(b => { b.disabled = true; });
+  setSaving('saving');
+
+  try {
+    await window.fsRunTransaction(window.db, async (tx) => {
+      const ref = window.fsDoc(window.db, 'pedidos', numero);
+      const snap = await tx.get(ref);
+      if (!snap.exists()) throw new Error('El pedido ya no existe.');
+      const actual = snap.data();
+      if (actual.estado !== desde) {
+        throw new Error(`El pedido cambió mientras lo mirabas (ahora está "${estadoPedido(actual).label}"). Revisalo de nuevo.`);
+      }
+
+      const cambios = { estado: hacia, actualizadoEn: window.fsServerTimestamp() };
+      if (hacia === 'pagado' && !actual.pagadoEn) cambios.pagadoEn = window.fsServerTimestamp();
+      if (hacia === 'enviado') cambios.enviadoEn = window.fsServerTimestamp();
+
+      if (hacia === 'cancelado') {
+        // Todas las lecturas antes de escribir (lo exige Firestore).
+        const reponer = actual.stockDescontado || [];
+        const refs = reponer.map(d => window.fsDoc(window.db, 'productos', d.id));
+        const productos = await Promise.all(refs.map(r => tx.get(r)));
+        productos.forEach((prod, i) => {
+          if (!prod.exists()) return; // el producto se borró
+          const stock = prod.data().stock;
+          if (stock === null || stock === undefined || stock === '') return; // ahora es ilimitado
+          tx.update(refs[i], { stock: Number(stock) + (Number(reponer[i].cantidad) || 0) });
+        });
+        cambios.stockDescontado = [];
+        cambios.canceladoEn = window.fsServerTimestamp();
+      }
+
+      tx.update(ref, cambios);
+    });
+    setSaving('ok');
+    showToast(MENSAJES_ESTADO[hacia] || '✅ Pedido actualizado');
+  } catch (e) {
+    setSaving('');
+    showToast('❌ ' + (e.message || 'No se pudo actualizar el pedido'), 'err');
+    botones.forEach(b => { b.disabled = false; });
+  }
+}
+window.cambiarEstadoPedido = cambiarEstadoPedido;
+
+async function guardarNotaPedido() {
+  const numero = window.pedidoAbierto;
+  const area = document.getElementById('pedidoNota');
+  if (!numero || !area) return;
+  setSaving('saving');
+  try {
+    await window.fsUpdateDoc(window.fsDoc(window.db, 'pedidos', numero), {
+      notaAdmin: area.value.trim().slice(0, 1000),
+      actualizadoEn: window.fsServerTimestamp()
+    });
+    delete window.notasBorrador[numero];
+    setSaving('ok');
+    showToast('💾 Nota guardada');
+  } catch (e) {
+    setSaving('');
+    showToast('❌ Error: ' + e.message, 'err');
+  }
+}
+window.guardarNotaPedido = guardarNotaPedido;
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (document.getElementById('orderModal')?.classList.contains('open')) closeOrderModal();
+  else if (document.getElementById('productModal')?.classList.contains('open')) closeProductModal();
+});
 
 // ─────────────────────────────────────────────
 // CARRUSELES DE PORTADA (fotos de fondo del hero)
@@ -512,6 +975,8 @@ window.closeProductModal = closeProductModal;
 document.addEventListener('click', (e) => {
   const modal = document.getElementById('productModal');
   if (modal && modal.classList.contains('open') && e.target === modal) closeProductModal();
+  const orderModal = document.getElementById('orderModal');
+  if (orderModal && orderModal.classList.contains('open') && e.target === orderModal) closeOrderModal();
 });
 
 async function saveProductModal() {

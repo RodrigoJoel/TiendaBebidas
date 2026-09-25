@@ -79,6 +79,13 @@ service cloud.firestore {
       allow write: if request.auth != null
                    && request.auth.token.email == 'rodrigoatatat@gmail.com';
     }
+    // Pedidos: solo el administrador los ve y les cambia el estado.
+    // Crearlos y borrarlos no está permitido desde el navegador: los
+    // crean las funciones de /api con la cuenta de servicio.
+    match /pedidos/{pedidoId} {
+      allow read, update: if request.auth != null
+                          && request.auth.token.email == 'rodrigoatatat@gmail.com';
+    }
   }
 }
 ```
@@ -133,25 +140,43 @@ pedidos/
     subtotal: 112600
     envio: 20000
     total: 132600
-    mercadoPago: { preferenciaId, pago: { id, estado, detalle, monto, fecha } }   // solo Mercado Pago
-    creadoEn / actualizadoEn: timestamp
+    stockDescontado: [{ id, cantidad }]     // lo que se repone si se cancela
+    mercadoPago: { preferenciaId, pagoAprobadoId, pago: { id, estado, detalle, monto, fecha } }   // solo Mercado Pago
+    motivoRevision: "..."                   // solo si quedó en "revisar_pago"
+    notaAdmin: "..."                        // nota interna del panel
+    creadoEn / actualizadoEn / pagadoEn / enviadoEn / canceladoEn: timestamp
 ```
 
 ### Estados
 
 | Estado | Cuándo |
 |---|---|
-| `esperando_transferencia` | Pedido por transferencia: falta que el cliente mande el comprobante |
+| `esperando_transferencia` | Pedido por transferencia: falta que el cliente transfiera y mande el comprobante |
 | `pendiente_pago` | Pedido con Mercado Pago que todavía no se pagó (o que el cliente abandonó) |
-| `pagado` | Mercado Pago confirmó el pago (se consulta directo a Mercado Pago, no se confía en la URL) |
-| `revisar_pago` | Mercado Pago aprobó un monto distinto al total del pedido: revisarlo antes de enviar |
+| `pagado` | Pago confirmado (Mercado Pago lo aprobó, o el admin marcó que llegó la transferencia): hay que enviarlo |
+| `revisar_pago` | Algo no cierra y hay que mirarlo antes de enviar; el motivo queda en `motivoRevision` (monto distinto, stock que no alcanzó, pago devuelto o con contracargo, cobrado dos veces, pagado después de cancelado) |
+| `enviado` | El admin lo marcó como despachado |
+| `cancelado` | El admin lo canceló; el stock que había descontado ya se repuso |
+
+### Stock
+
+- **Transferencia:** se descuenta al crear el pedido (queda reservado mientras el cliente transfiere).
+- **Mercado Pago:** se descuenta cuando se aprueba el pago. Si mientras tanto se agotó, se descuenta lo que haya (nunca queda negativo) y el pedido pasa a `revisar_pago`.
+- **Cancelar** desde el panel repone lo descontado. Los productos con stock ilimitado (vacío) no se tocan.
+- Todo se hace en transacciones de Firestore: dos compras al mismo tiempo no se pueden llevar la misma unidad.
 
 ### Flujo y funciones
 
-- `api/crear-pedido-transferencia.js`: guarda el pedido y manda los mails (aviso al dueño + datos para transferir al cliente).
-- `api/crear-preferencia.js`: guarda el pedido como `pendiente_pago` y crea el link de pago de Mercado Pago.
-- `api/confirmar-pago.js`: cuando Mercado Pago devuelve al cliente al checkout, verifica el pago con Mercado Pago; si está aprobado marca el pedido `pagado` y manda los mails (una sola vez).
-- `api/_lib/`: código común (Firebase Admin, validaciones, mails). Vercel no publica como endpoint lo que empieza con `_`.
+- `api/crear-pedido-transferencia.js`: guarda el pedido, reserva el stock y manda los mails (aviso al dueño + datos para transferir al cliente).
+- `api/crear-preferencia.js`: guarda el pedido como `pendiente_pago` y crea el link de pago de Mercado Pago, con `notification_url` apuntando al webhook.
+- `api/confirmar-pago.js`: cuando Mercado Pago devuelve al cliente al checkout, verifica el pago con Mercado Pago.
+- `api/webhook-mercadopago.js`: Mercado Pago avisa cada pago acá, aunque el cliente cierre la pestaña. No hace falta configurar nada en el panel de Mercado Pago: la dirección va en cada link de pago. Opcionalmente se puede cargar `MP_WEBHOOK_SECRET` para exigir la firma.
+- Las dos últimas usan la misma lógica (`api/_lib/pagos.js`): si el pago está aprobado, descuentan el stock, marcan el pedido `pagado` y mandan los mails. Da igual cuál llegue primero; nada se repite.
+- `api/_lib/`: código común (Firebase Admin, validaciones, stock, pagos, mails). Vercel no publica como endpoint lo que empieza con `_`.
+
+### Panel de administración
+
+`admin.html → Pedidos` muestra los pedidos en tiempo real (los últimos 300), con filtros por estado y buscador. "Para atender" junta los que esperan transferencia, los pagados sin enviar y los que hay que revisar; los `pendiente_pago` abandonados quedan aparte en "Sin pagar". Desde el detalle se marca que llegó la transferencia, que se envió, o se cancela (reponiendo stock), y se puede dejar una nota interna.
 
 ### Mails
 
@@ -161,4 +186,6 @@ Mientras no haya un dominio propio verificado en Resend, Resend solo entrega mai
 
 ### Reglas
 
-No hace falta agregar reglas para que funcione: las funciones del servidor usan la cuenta de servicio, que no pasa por las reglas, y como `pedidos` no tiene regla propia, desde el navegador nadie puede leerla ni escribirla (Firestore niega todo lo que no está permitido explícitamente).
+Para que el panel pueda ver y actualizar los pedidos hace falta publicar la regla de `pedidos` de la sección 3 (solo lectura y actualización, y solo para el administrador). Las funciones del servidor usan la cuenta de servicio, que no pasa por las reglas. Nadie más puede leer ni escribir pedidos desde el navegador, y ni siquiera el admin puede crearlos o borrarlos.
+
+Mientras la regla no esté publicada, la tienda y el resto del panel funcionan igual; la sección Pedidos muestra un aviso.

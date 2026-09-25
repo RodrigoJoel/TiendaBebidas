@@ -370,7 +370,7 @@ async function confirmarPagoMercadoPago(paymentId, numeroUrl) {
 
   const numeroFinal = resultado.numero || numero;
 
-  if (resultado.estado === 'pagado') {
+  if (resultado.estado === 'pagado' || resultado.estado === 'enviado') {
     mostrarConfirmacion({
       icono: '✅',
       titulo: '¡Pago aprobado!',

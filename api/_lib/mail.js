@@ -123,7 +123,7 @@ async function avisarNuevoPedido(pedido) {
   const estadoPago = esTransferencia
     ? 'Transferencia — falta que el cliente mande el comprobante'
     : pedido.estado === 'revisar_pago'
-      ? '⚠️ Mercado Pago — el monto cobrado no coincide con el total: revisalo antes de enviar'
+      ? `⚠️ Mercado Pago — revisalo antes de enviar: ${esc(pedido.motivoRevision || 'el pago no coincide con el pedido.')}`
       : `Mercado Pago — pago aprobado${pedido.mercadoPago?.pago?.id ? ` (ID ${esc(pedido.mercadoPago.pago.id)})` : ''}`;
 
   const html = plantilla(`

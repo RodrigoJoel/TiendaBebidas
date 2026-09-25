@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=1">
+  <link rel="stylesheet" href="admin.css?v=2">
 </head>
 <body>
 <div id="adminLoading">
@@ -18,6 +18,7 @@
 
 <header class="topbar">
   <div class="logo">
+    <button type="button" class="menu-btn" onclick="toggleSidebar()" aria-label="Abrir menú">☰</button>
     <div class="logo-mark">🍾</div>
     <div class="logo-name">GLOBAL<span>IMPORTADOS</span></div>
     <span class="logo-badge">ADMIN</span>
@@ -39,6 +40,7 @@
   <nav class="sidebar">
     <div class="sidebar-section">General</div>
     <div class="nav-item active" onclick="navigate('dashboard',this)"><span class="nav-icon">📊</span><span>Dashboard</span></div>
+    <div class="nav-item" data-page="pedidos" onclick="navigate('pedidos',this)"><span class="nav-icon">🧾</span><span>Pedidos</span><span class="nav-count hidden" id="navPedidosCount"></span></div>
     <div class="nav-item" onclick="navigate('carousels',this)"><span class="nav-icon">🖼️</span><span>Carruseles de portada</span></div>
     <div class="nav-divider"></div>
 
@@ -140,11 +142,18 @@
   </div>
 </div>
 
+<div class="modal-back hidden" id="orderModal">
+  <div class="modal-box wide">
+    <button class="modal-close" onclick="closeOrderModal()">✕</button>
+    <div id="orderModalBody"></div>
+  </div>
+</div>
+
 <div class="toast-wrap" id="toastWrap"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
-import { getFirestore, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, updateDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+import { getFirestore, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, updateDoc, getDocs, query, orderBy, limit, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -173,6 +182,8 @@ window.fsDeleteDoc = deleteDoc;
 window.fsUpdateDoc = updateDoc;
 window.fsGetDocs = getDocs;
 window.fsOnSnapshot = onSnapshot;
+window.fsRunTransaction = runTransaction;
+window.fsServerTimestamp = serverTimestamp;
 
 window.toggleAdminMenu = function () {
   document.getElementById("adminDropdown").classList.toggle("show");
@@ -197,10 +208,21 @@ window.logoutAdmin = async function () {
   }
 };
 
-window.DATA = { productos: [], carousels: {} };
+window.DATA = { productos: [], carousels: {}, pedidos: [], pedidosError: null };
 window.currentPage = "dashboard";
 
 function setupRealtimeListener() {
+  // Los pedidos más nuevos primero. Si falta la regla de Firestore para
+  // "pedidos", el panel sigue andando y la sección muestra el aviso.
+  onSnapshot(query(collection(db, "pedidos"), orderBy("creadoEn", "desc"), limit(300)), (snap) => {
+    window.DATA.pedidos = snap.docs.map((d) => ({ docId: d.id, ...d.data({ serverTimestamps: "estimate" }) }));
+    window.DATA.pedidosError = null;
+    if (typeof window.render === "function") window.render(window.currentPage);
+  }, (error) => {
+    console.error("No se pudieron leer los pedidos:", error);
+    window.DATA.pedidosError = error.code || error.message;
+    if (typeof window.render === "function") window.render(window.currentPage);
+  });
   onSnapshot(collection(db, "productos"), (snap) => {
     window.DATA.productos = snap.docs.map((d) => ({ docId: d.id, ...d.data() }));
     if (typeof window.render === "function") window.render(window.currentPage);
@@ -231,6 +253,6 @@ onAuthStateChanged(auth, (user) => {
 });
 </script>
 
-<script src="admin-script.js?v=1"></script>
+<script src="admin-script.js?v=2"></script>
 </body>
 </html>

@@ -6,7 +6,8 @@
 //  Guarda el pedido en Firestore ("pendiente_pago") con los datos
 //  del cliente y con precio y stock leídos de Firestore (no confía
 //  en lo que mande el navegador), y devuelve el link de pago.
-//  El pago se confirma después en /api/confirmar-pago.
+//  El pago se confirma después en /api/confirmar-pago (cuando el
+//  cliente vuelve) o en /api/webhook-mercadopago (aviso de MP).
 // ============================================================
 const { MercadoPagoConfig, Preference } = require('mercadopago');
 const { getDb } = require('./_lib/firebase-admin');
@@ -59,6 +60,8 @@ module.exports = async (req, res) => {
           pending: `${origin}/checkout.html`
         },
         auto_return: 'approved',
+        // Mercado Pago avisa acá cada pago, aunque el cliente no vuelva al sitio.
+        notification_url: `${origin}/api/webhook-mercadopago?source_news=webhooks`,
         statement_descriptor: 'GLOBAL IMPORTADOS'
       }
     });
@@ -69,6 +72,8 @@ module.exports = async (req, res) => {
       medioPago: 'mercadopago',
       cliente,
       ...detalle,
+      // El stock se descuenta recién cuando se aprueba el pago.
+      stockDescontado: [],
       mercadoPago: { preferenciaId: result.id }
     });
 
