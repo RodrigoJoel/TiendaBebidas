@@ -178,6 +178,10 @@ function render(page) {
   // buscador, se mantiene el foco al redibujar.
   const activo = document.activeElement;
   const foco = activo && activo.id && main.contains(activo) ? { id: activo.id, pos: activo.selectionStart } : null;
+  // Lo mismo con la barra de la lista de productos: al guardar una
+  // edición no vuelve arriba de todo (salvo que se cambie de página).
+  const lista = main.querySelector('.prod-list-scroll');
+  const scrollLista = lista && main.dataset.page === page ? lista.scrollTop : 0;
 
   if (page === 'dashboard') main.innerHTML = pageDashboard();
   else if (page === 'pedidos') main.innerHTML = pagePedidos();
@@ -185,6 +189,10 @@ function render(page) {
   else if (page === 'todos') main.innerHTML = pageCategoryManager('todos');
   else if (window.CATEGORY_CONFIG[page]) main.innerHTML = pageCategoryManager(page);
   else main.innerHTML = '<p style="color:var(--muted)">Página no encontrada</p>';
+  main.dataset.page = page;
+
+  const nuevaLista = main.querySelector('.prod-list-scroll');
+  if (nuevaLista) nuevaLista.scrollTop = scrollLista;
 
   const input = foco && document.getElementById(foco.id);
   if (input) {
@@ -822,7 +830,7 @@ function pageCategoryManager(cat) {
           </div>
         </div>
 
-        <div class="prod-list">
+        <div class="prod-list prod-list-scroll">
           ${filtered.length === 0 ? `<p style="color:var(--muted);text-align:center;padding:20px">No hay productos que coincidan con la búsqueda o filtros.</p>` : filtered.map(p => `
             <div class="prod-item ${p.active === false ? 'inactive' : ''}">
               <div class="prod-thumb">${p.image ? `<img src="${esc(p.image)}" alt=""/>` : `<span style="font-size:22px">${p.emoji || window.CATEGORY_CONFIG[p.category]?.icon || '🍾'}</span>`}</div>

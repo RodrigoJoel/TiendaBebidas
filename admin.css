@@ -241,6 +241,12 @@ body {
 
 /* ── PRODUCT LIST ── */
 .prod-list { display: flex; flex-direction: column; gap: 10px; }
+/* Lista de productos de cada categoría: se ven unos 5 y el resto se desliza. */
+.prod-list-scroll {
+  max-height: min(470px, 70vh); overflow-y: auto;
+  padding-right: 6px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.22) transparent;
+}
+.prod-list-scroll .prod-item { flex-shrink: 0; }
 .prod-item {
   display: flex; align-items: center; gap: 14px;
   padding: 0.7rem; border: 1px solid var(--border); border-radius: 12px;
