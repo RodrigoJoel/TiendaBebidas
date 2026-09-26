@@ -1,11 +1,18 @@
-import { escucharProductos } from "./firebase.js";
+import { escucharDestacados } from "./firebase.js";
+
+// Secciones de "Destacados" del inicio. Qué productos van en cada una
+// se elige desde el panel admin (campo `destacados` del producto).
+const SECCIONES_INICIO = [
+  { key: 'mas-pedidos', label: 'Más pedidos' },
+  { key: 'ofertas', label: 'Ofertas' }
+];
 
 // ============================================================
 //  ESTADO
 // ============================================================
 let PRODUCTS = [];
 let cart = cargarCarritoGuardado();
-let currentFilter = 'Todos';
+let seccionActual = SECCIONES_INICIO[0].key;
 
 // ============================================================
 //  UTILS
@@ -32,11 +39,12 @@ function cargarProductos(productos) {
       stock: p.stock ?? null,
       emoji: p.emoji ?? '🍾',
       badge: p.badge ?? null,
-      newBadge: p.newBadge ?? p.badge === 'NEW'
+      newBadge: p.newBadge ?? p.badge === 'NEW',
+      destacados: Array.isArray(p.destacados) ? p.destacados : []
     }))
     .sort((a, b) => Number(a.order ?? 9999) - Number(b.order ?? 9999));
 
-  renderProducts(currentFilter);
+  renderProducts();
   actualizarPreciosDelCarrito();
 }
 
@@ -50,25 +58,32 @@ function mostrarErrorFirebase() {
   }
 }
 
-// Escucha cambios en tiempo real. Cuando el futuro panel admin agregue,
-// edite o desactive productos, el sitio se actualizará automáticamente.
-escucharProductos(cargarProductos, mostrarErrorFirebase);
+// Escucha cambios en tiempo real: cuando desde el panel se marca o
+// desmarca un producto para el inicio, el sitio se actualiza solo.
+escucharDestacados(SECCIONES_INICIO.map(s => s.key), cargarProductos, mostrarErrorFirebase);
 
 // ============================================================
 //  PRODUCTOS
 // ============================================================
-function renderProducts(filter) {
+// Solo se muestran las pestañas de las secciones que tienen productos.
+function renderProducts() {
   const grid = document.getElementById('productsGrid');
   if (!grid) return;
 
-  const items = filter === 'Todos'
-    ? PRODUCTS
-    : PRODUCTS.filter(p => p.cat === filter);
+  const secciones = SECCIONES_INICIO.filter(s => PRODUCTS.some(p => p.destacados.includes(s.key)));
+  if (!secciones.some(s => s.key === seccionActual) && secciones.length) seccionActual = secciones[0].key;
+
+  const tabs = document.getElementById('filterTabs');
+  if (tabs) {
+    tabs.innerHTML = secciones.map(s => `<button class="tab${s.key === seccionActual ? ' active' : ''}" onclick="mostrarSeccion('${s.key}')">${s.label}</button>`).join('');
+  }
+
+  const items = PRODUCTS.filter(p => p.destacados.includes(seccionActual));
 
   if (!items.length) {
     grid.innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted);">
-        No hay productos disponibles en esta categoría.
+        Muy pronto vas a ver acá nuestros destacados. Mientras tanto, recorré las <a href="#categorias" style="color:inherit">categorías</a>.
       </div>`;
     return;
   }
@@ -99,21 +114,9 @@ function renderProducts(filter) {
   }).join('');
 }
 
-function filterProducts(cat) {
-  currentFilter = cat;
-  renderProducts(cat);
-
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => {
-    if (t.textContent.trim() === cat || (cat === 'Todos' && t.textContent.trim() === 'Todos')) {
-      t.classList.add('active');
-    }
-  });
-
-  if (cat !== 'Todos') {
-    document.getElementById('productos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-  return false;
+function mostrarSeccion(key) {
+  seccionActual = key;
+  renderProducts();
 }
 
 // ============================================================
@@ -245,7 +248,7 @@ function irACheckout() {
 // ============================================================
 //  FUNCIONES USADAS POR onclick="..." EN HTML
 // ============================================================
-window.filterProducts = filterProducts;
+window.mostrarSeccion = mostrarSeccion;
 window.addToCart = addToCart;
 window.changeQty = changeQty;
 window.toggleCart = toggleCart;

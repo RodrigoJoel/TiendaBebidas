@@ -3,7 +3,7 @@
 // ============================================================
 // Firebase Web SDK 12.17.0 - API modular
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, doc, query, where } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDRKn7CkbwblMLohJjq7oIE73vXiWlrB70",
@@ -34,6 +34,24 @@ export function escucharProductos(callback, onError = console.error) {
     },
     error => {
       console.error("Error al leer productos desde Firestore:", error);
+      onError(error);
+    }
+  );
+}
+
+/**
+ * Escucha en tiempo real solo los productos marcados desde el panel para
+ * alguna sección del inicio (campo `destacados`, p. ej. ["mas-pedidos"]).
+ * Así el index no descarga el catálogo entero.
+ */
+export function escucharDestacados(secciones, callback, onError = console.error) {
+  return onSnapshot(
+    query(collection(db, "productos"), where("destacados", "array-contains-any", secciones)),
+    snapshot => {
+      callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    },
+    error => {
+      console.error("Error al leer los destacados desde Firestore:", error);
       onError(error);
     }
   );

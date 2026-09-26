@@ -21,6 +21,13 @@ window.CATEGORY_KEYS = Object.keys(window.CATEGORY_CONFIG);
 
 const COMMON_SIZES = ['50 cc', '200 cc', '269 cc', '355 cc', '375 cc', '473 cc', '500 cc', '700 cc', '750 cc', '1 L', '1.5 L', '2 L', '3 L'];
 
+// Secciones de "Destacados" del inicio (las mismas que en script.js).
+// Un producto aparece en el index solo si está marcado en alguna.
+const SECCIONES_INICIO = [
+  { key: 'mas-pedidos', label: 'Más pedidos', icon: '🔥' },
+  { key: 'ofertas', label: 'Ofertas', icon: '🏷️' }
+];
+
 window.adminFilters = window.adminFilters || {};
 window.currentPage = window.currentPage || 'dashboard';
 
@@ -110,6 +117,22 @@ function badgeClass(b) {
   if (low.includes('oferta') || low.includes('descuento')) return 'badge-offer';
   if (low.includes('hot') || low.includes('últimas')) return 'badge-hot';
   return '';
+}
+
+function destacadosDe(p) {
+  return Array.isArray(p.destacados) ? p.destacados : [];
+}
+
+// Casillas "Mostrar en el inicio" (formulario de alta y modal de edición).
+function checksDestacados(prefijo, marcados = []) {
+  return `
+    <div class="check-row">
+      ${SECCIONES_INICIO.map(s => `<label class="field-check"><input type="checkbox" id="${prefijo}_${s.key}" ${marcados.includes(s.key) ? 'checked' : ''}/> ${s.icon} ${s.label}</label>`).join('')}
+    </div>
+    <div class="field-hint">Si no marcás ninguna, el producto se ve solo en su categoría. Para Ofertas, cargale también el precio tachado.</div>`;
+}
+function leerDestacados(prefijo) {
+  return SECCIONES_INICIO.filter(s => document.getElementById(`${prefijo}_${s.key}`)?.checked).map(s => s.key);
 }
 
 function stockPill(stock) {
@@ -740,7 +763,7 @@ function pageCategoryManager(cat) {
   const isAll = cat === 'todos';
   const conf = isAll ? { icon: '🗂️', label: 'Todos los productos', title: 'TODO EL <span>CATÁLOGO</span>', sub: 'Todas las categorías en una sola vista.' } : window.CATEGORY_CONFIG[cat];
 
-  const state = window.adminFilters[cat] || { search: '', brand: 'all', size: 'all' };
+  const state = window.adminFilters[cat] || { search: '', brand: 'all', size: 'all', inicio: 'all' };
   window.adminFilters[cat] = state;
 
   const list = getProductsFor(cat);
@@ -752,7 +775,9 @@ function pageCategoryManager(cat) {
     const matchSearch = !term || `${p.name} ${p.brand} ${p.size}`.toLowerCase().includes(term);
     const matchBrand = state.brand === 'all' || p.brand === state.brand;
     const matchSize = state.size === 'all' || p.size === state.size;
-    return matchSearch && matchBrand && matchSize;
+    const matchInicio = !state.inicio || state.inicio === 'all'
+      || (state.inicio === 'alguna' ? destacadosDe(p).length > 0 : destacadosDe(p).includes(state.inicio));
+    return matchSearch && matchBrand && matchSize && matchInicio;
   });
 
   return `
@@ -768,7 +793,7 @@ function pageCategoryManager(cat) {
         <div class="card-title"><span>${conf.icon}</span> Productos (${filtered.length}/${list.length})</div>
       </div>
       <div class="card-body">
-        <div class="field-row3" style="margin-bottom:16px">
+        <div class="field-row4" style="margin-bottom:16px">
           <div class="field" style="margin:0">
             <label>Buscar</label>
             <input id="filterSearch_${cat}" placeholder="Nombre, marca o tamaño..." value="${esc(state.search)}" oninput="setAdminFilter('${cat}','search',this.value)"/>
@@ -787,6 +812,14 @@ function pageCategoryManager(cat) {
               ${sizes.map(s => `<option value="${esc(s)}" ${state.size === s ? 'selected' : ''}>${esc(s)}</option>`).join('')}
             </select>
           </div>
+          <div class="field" style="margin:0">
+            <label>En el inicio</label>
+            <select onchange="setAdminFilter('${cat}','inicio',this.value)">
+              <option value="all">Todos</option>
+              <option value="alguna" ${state.inicio === 'alguna' ? 'selected' : ''}>Destacados (cualquiera)</option>
+              ${SECCIONES_INICIO.map(s => `<option value="${s.key}" ${state.inicio === s.key ? 'selected' : ''}>${s.icon} ${s.label}</option>`).join('')}
+            </select>
+          </div>
         </div>
 
         <div class="prod-list">
@@ -800,6 +833,7 @@ function pageCategoryManager(cat) {
                   ${p.oldPrice ? `<span class="meta-old">${fmt(p.oldPrice)}</span>` : ''}
                   <span class="meta-brand">${esc(p.brand || '')}${p.size ? ' · ' + esc(p.size) : ''}</span>
                   ${p.badge ? `<span class="badge-pill ${badgeClass(p.badge)}">${esc(p.badge)}</span>` : ''}
+                  ${SECCIONES_INICIO.filter(s => destacadosDe(p).includes(s.key)).map(s => `<span class="badge-pill badge-home">${s.icon} ${s.label}</span>`).join('')}
                   ${isAll ? `<span class="badge-pill">${esc(p.category || '')}</span>` : ''}
                   ${stockPill(p.stock)}
                   ${p.active === false ? `<span class="badge-pill badge-inactive">OCULTO</span>` : ''}
@@ -853,6 +887,8 @@ function pageCategoryManager(cat) {
 
       <div class="field"><label>Descripción</label><textarea id="npDesc_${cat}" placeholder="Se muestra en la ficha del producto..."></textarea></div>
 
+      <div class="field"><label>Mostrar en el inicio</label>${checksDestacados(`npDest_${cat}`)}</div>
+
       <div class="btn-row" style="margin-top:14px">
         <button class="btn btn-primary" onclick="addProduct('${cat}')">✅ Agregar ${conf.label.toLowerCase()}</button>
       </div>
@@ -861,7 +897,7 @@ function pageCategoryManager(cat) {
 }
 
 function setAdminFilter(cat, key, value) {
-  window.adminFilters[cat] = window.adminFilters[cat] || { search: '', brand: 'all', size: 'all' };
+  window.adminFilters[cat] = window.adminFilters[cat] || { search: '', brand: 'all', size: 'all', inicio: 'all' };
   window.adminFilters[cat][key] = value;
   if (key === 'search') {
     const input = document.getElementById(`filterSearch_${cat}`);
@@ -898,6 +934,7 @@ async function addProduct(cat) {
     emoji: document.getElementById(`npEmoji_${cat}`).value.trim() || window.CATEGORY_CONFIG[cat].icon,
     image: document.getElementById(`npImg_${cat}`).value.trim(),
     description: document.getElementById(`npDesc_${cat}`).value.trim(),
+    destacados: leerDestacados(`npDest_${cat}`),
     active: true,
     order: list.length,
     createdAt: Date.now()
@@ -911,6 +948,10 @@ async function addProduct(cat) {
       if (el) el.value = '';
     });
     document.getElementById(`npEmoji_${cat}`).value = window.CATEGORY_CONFIG[cat].icon;
+    SECCIONES_INICIO.forEach(s => {
+      const el = document.getElementById(`npDest_${cat}_${s.key}`);
+      if (el) el.checked = false;
+    });
     previewImg(`npImg_${cat}`, `npImgPrev_${cat}`);
   }
 }
@@ -950,6 +991,7 @@ function editProduct(docId) {
   document.getElementById('pmDesc').value = p.description || '';
   document.getElementById('pmOrder').value = p.order ?? 0;
   document.getElementById('pmActive').checked = p.active !== false;
+  document.getElementById('pmDestacados').innerHTML = checksDestacados('pmDest', destacadosDe(p));
 
   const brandList = document.getElementById('pmBrandList');
   const sizeList = document.getElementById('pmSizeList');
@@ -996,7 +1038,8 @@ async function saveProductModal() {
     image: document.getElementById('pmImg').value.trim(),
     description: document.getElementById('pmDesc').value.trim(),
     order: Number(document.getElementById('pmOrder').value) || 0,
-    active: document.getElementById('pmActive').checked
+    active: document.getElementById('pmActive').checked,
+    destacados: leerDestacados('pmDest')
   };
 
   if (!data.name || !data.price) { showToast('⚠️ Completá nombre y precio', 'err'); return; }

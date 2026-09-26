@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=2">
+  <link rel="stylesheet" href="admin.css?v=3">
 </head>
 <body>
 <div id="adminLoading">
@@ -135,6 +135,8 @@
       </div>
     </div>
 
+    <div class="field"><label>Mostrar en el inicio</label><div id="pmDestacados"></div></div>
+
     <div class="btn-row">
       <button class="btn btn-primary" onclick="saveProductModal()">💾 Guardar cambios</button>
       <button class="btn btn-ghost" onclick="closeProductModal()">Cancelar</button>
@@ -253,6 +255,6 @@ onAuthStateChanged(auth, (user) => {
 });
 </script>
 
-<script src="admin-script.js?v=2"></script>
+<script src="admin-script.js?v=3"></script>
 </body>
 </html>
