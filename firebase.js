@@ -19,18 +19,15 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 /**
- * Escucha en tiempo real la colección de productos.
- * La misma función se puede reutilizar en index, whisky y futuras categorías.
+ * Escucha en tiempo real solo los productos de una categoría (campo
+ * `category`, p. ej. "Whisky"). Así cada página de categoría no descarga
+ * el catálogo entero.
  */
-export function escucharProductos(callback, onError = console.error) {
+export function escucharCategoria(categoria, callback, onError = console.error) {
   return onSnapshot(
-    collection(db, "productos"),
+    query(collection(db, "productos"), where("category", "==", categoria)),
     snapshot => {
-      const productos = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      callback(productos);
+      callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     },
     error => {
       console.error("Error al leer productos desde Firestore:", error);

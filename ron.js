@@ -1,4 +1,4 @@
-import { escucharProductos } from "./firebase.js";
+import { escucharCategoria } from "./firebase.js";
 
 // ============================================================
 //  ESTADO
@@ -25,7 +25,6 @@ function formatPrice(n) {
 function cargarProductos(productos) {
   PRODUCTS = productos
     .filter(p => p.active !== false)
-    .filter(p => (p.category ?? p.cat) === 'Ron')
     .map(p => ({
       ...p,
       id: p.id,
@@ -60,8 +59,8 @@ function mostrarErrorFirebase() {
   }
 }
 
-// Escucha cambios en tiempo real del catálogo.
-escucharProductos(cargarProductos, mostrarErrorFirebase);
+// Escucha en tiempo real solo los productos de esta categoría.
+escucharCategoria('Ron', cargarProductos, mostrarErrorFirebase);
 
 // ============================================================
 //  FILTROS
