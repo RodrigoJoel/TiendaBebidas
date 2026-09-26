@@ -47,6 +47,7 @@ body {
   color: var(--sky);
 }
 .al-logo span { color: var(--citrus); }
+.al-emblem { width: 96px; height: 96px; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.45)); }
 .al-bar { width: 220px; height: 4px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
 .al-bar-inner { width: 40%; height: 100%; background: var(--blue); border-radius: 4px; animation: alSlide 1.1s ease-in-out infinite; }
 @keyframes alSlide { 0% { transform: translateX(-100%); } 100% { transform: translateX(340%); } }
@@ -62,7 +63,7 @@ body {
   border-bottom: 1px solid var(--border);
 }
 .logo { display: flex; align-items: center; gap: 10px; }
-.logo-mark { font-size: 1.4rem; }
+.logo-mark { width: 34px; height: 34px; flex-shrink: 0; border-radius: 50%; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35)); }
 .logo-name {
   font-family: 'Anton', sans-serif;
   font-size: 1.2rem;

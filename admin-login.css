@@ -203,6 +203,17 @@ body {
   margin-bottom: 2rem;
 }
 .brand-logo b { color: var(--citrus); }
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.brand-emblem {
+  width: 88px;
+  height: 88px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.45));
+}
 .brand-content h2 {
   font-family: 'Anton', sans-serif;
   font-weight: 400;

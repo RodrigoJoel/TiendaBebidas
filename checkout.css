@@ -419,3 +419,28 @@ textarea.form-input { resize: vertical; }
   .step-item span { display: none; }
   .step-line { width: 24px; }
 }
+
+/* ───── LOGO: emblema + nombre ───── */
+.nav-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.nav-emblem {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+}
+html[data-theme="light"] .nav-emblem {
+  filter: drop-shadow(0 2px 5px rgba(60, 40, 10, 0.2));
+}
+.nav-logo .nav-logo-text { color: var(--sky); }
+.nav-logo .nav-logo-text span { color: var(--citrus); }
+
+@media (max-width: 600px) {
+  .nav-logo { gap: 0.55rem; }
+  .nav-emblem { width: 36px; height: 36px; }
+  .nav-logo-text span { display: block; }
+}
