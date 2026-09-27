@@ -451,9 +451,11 @@ section {
 }
 
 .cat-emoji {
-  font-size: 2.2rem;
-  margin-bottom: 0.75rem;
   display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  margin-bottom: 0.75rem;
 }
 .cat-name {
   font-weight: 600;
@@ -1133,10 +1135,6 @@ footer {
     padding-left: 1.25rem;
     padding-right: 1.25rem;
   }
-  .footer-top {
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-  }
   .promo-banner {
     padding: 2rem;
   }
@@ -1270,6 +1268,31 @@ nav {
   .nav-links {
     display: none;
   }
+  /* Con 4 columnas, entre 769 y ~800px la columna "Legal" quedaba
+     cortada por la derecha: hasta 960px el pie va en 2 columnas. */
+  .footer-top {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+  .footer-top > * {
+    min-width: 0;
+  }
+  .footer-brand,
+  .footer-top .footer-col:nth-child(2) {
+    grid-column: 1 / -1;
+  }
+}
+
+/* En celulares las categorías van de a 2 por fila: en una sola
+   columna ocupaban más de la mitad del inicio. */
+@media (max-width: 480px) {
+  .cats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+  .cat-card {
+    padding: 0.75rem 0.75rem 1rem;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1294,13 +1317,6 @@ nav {
   }
   .hero {
     padding-top: 9.5rem;
-  }
-  .footer-top > * {
-    min-width: 0;
-  }
-  .footer-brand,
-  .footer-top .footer-col:nth-child(2) {
-    grid-column: 1 / -1;
   }
   .footer-brand .nav-logo {
     font-size: 1.8rem;

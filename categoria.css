@@ -171,13 +171,15 @@ nav {
 }
 
 /* ───── HERO ───── */
+/* Encabezado compacto: quien entra a una categoría viene a ver los
+   productos, así que no ocupa la pantalla entera. El padding de arriba
+   deja lugar para el nav (72px) y la barra de categorías. */
 .hero {
-  min-height: 60vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
-  padding: 11rem 2rem 4rem;
+  padding: 9.5rem 2rem 2rem;
   max-width: 100% !important;
   padding-left: 2rem;
   padding-right: 2rem;
@@ -225,32 +227,19 @@ nav {
   background-size: 48px 48px;
   mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
 }
-.hero-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(26, 111, 191, 0.2);
-  border: 1px solid rgba(26, 111, 191, 0.4);
-  border-radius: 50px;
-  padding: 0.4rem 1rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--sky);
-  margin-bottom: 1.5rem;
-}
 h1 {
   font-family: 'Anton', sans-serif;
-  font-size: clamp(3.5rem, 10vw, 8rem);
+  font-size: clamp(2.2rem, 5vw, 4rem);
   line-height: 0.92;
   letter-spacing: 2px;
 }
-h1 .accent { color: var(--sky); display: block; }
+h1 .accent { color: var(--sky); }
 h1 .under {
   -webkit-text-stroke: 1px var(--sky);
   color: transparent;
 }
 .hero-sub {
-  margin-top: 1.5rem;
+  margin-top: 1rem;
   font-size: 1.1rem;
   color: var(--muted);
   max-width: 520px;
@@ -326,7 +315,8 @@ h1 .under {
   border-radius: var(--r);
   padding: 1.5rem;
   position: sticky;
-  top: 100px;
+  /* debajo del nav y la barra de categorías (~130px en total) */
+  top: 9rem;
 }
 .filter-sidebar h3 {
   font-family: 'Anton', sans-serif;
@@ -400,6 +390,7 @@ h1 .under {
   letter-spacing: 1px;
   margin-bottom: 2.5rem;
 }
+.products-header .section-title { margin-bottom: 0; font-size: clamp(1.8rem, 3vw, 2.4rem); }
 .products-header {
   display: flex;
   justify-content: space-between;
@@ -820,7 +811,8 @@ footer {
 @media (max-width: 768px) {
   nav { padding: 1rem; }
   .nav-links { display: none; }
-  .hero { padding: 7rem 1.25rem 3rem; }
+  .hero { padding: 9.5rem 1.25rem 1.5rem; }
+  .hero-sub { font-size: 1rem; line-height: 1.6; }
   .products-layout { flex-direction: column; }
   .filter-sidebar {
     flex: 1;
@@ -830,7 +822,35 @@ footer {
   }
   .filter-options { flex-direction: row; flex-wrap: wrap; }
   .filter-options label { font-size: 0.8rem; }
-  .footer-top { grid-template-columns: 1fr 1fr; gap: 2rem; }
+}
+
+/* ───── FILTROS EN CELULAR ───── */
+/* En celular el panel de marca y tamaño arranca cerrado, así los
+   productos quedan a la vista; se abre con el botón "Filtrar". */
+.filter-toggle { display: none; }
+@media (max-width: 768px) {
+  .filter-sidebar { padding: 1rem; }
+  .filter-sidebar h3 { display: none; }
+  .filter-group { margin-bottom: 1rem; }
+  .filter-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 50px;
+    padding: 0.6rem 1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .filter-toggle::after { content: '▾'; transition: transform 0.2s; }
+  .filter-sidebar.open .filter-toggle::after { transform: rotate(180deg); }
+  .filter-panel { display: none; margin-top: 1rem; }
+  .filter-sidebar.open .filter-panel { display: block; }
 }
 /* ───── BUSCADOR ───── */
 .search-input {
@@ -959,6 +979,12 @@ html { scroll-padding-top: 140px; }
 
 @media (max-width: 960px) {
   .nav-links { display: none; }
+  /* Con 4 columnas, entre 769 y ~800px la columna "Legal" quedaba
+     cortada por la derecha: hasta 960px el pie va en 2 columnas. */
+  .footer-top { grid-template-columns: 1fr 1fr; gap: 2rem; }
+  .footer-top > * { min-width: 0; }
+  .footer-brand,
+  .footer-top .footer-col:nth-child(2) { grid-column: 1 / -1; }
 }
 
 @media (max-width: 768px) {
@@ -967,14 +993,11 @@ html { scroll-padding-top: 140px; }
   .nav-actions { gap: 0.5rem; }
   .theme-toggle { width: 36px; height: 36px; }
   .btn-cart { padding: 0.5rem 0.9rem; white-space: nowrap; }
-  .hero { padding-top: 9.5rem; }
+  .shipping-bar { gap: 0.5rem 1.5rem; }
   .products-section { padding-left: 1.25rem; padding-right: 1.25rem; }
   .products-main { width: 100%; min-width: 0; }
   .pagination { gap: 0.75rem; flex-wrap: wrap; }
   .page-info { min-width: 0; }
-  .footer-top > * { min-width: 0; }
-  .footer-brand,
-  .footer-top .footer-col:nth-child(2) { grid-column: 1 / -1; }
   .footer-brand .nav-logo { font-size: 1.8rem; }
   .payment-icons { flex-wrap: wrap; }
 }

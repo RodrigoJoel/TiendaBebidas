@@ -22,10 +22,10 @@
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="combos.css" />
+  <link rel="stylesheet" href="categoria.css" />
   <script src="theme.js" defer></script>
 </head>
-<body data-hero-section="combos">
+<body data-hero-section="combos" data-categoria="Combos" data-emoji="📦">
 
   <!-- ====== NAV ====== -->
   <nav>
@@ -66,17 +66,12 @@
     <div class="hero-carousel" id="heroCarousel" aria-hidden="true"></div>
     <div class="hero-bg"></div>
     <div class="hero-grid"></div>
-    <div class="hero-tag">📦 Combos · Envíos a todo el país</div>
     <h1>
       <span class="accent">COMBOS</span>
       <span>ARMADOS</span>
       <span class="under">PARA VOS</span>
     </h1>
     <p class="hero-sub">Packs armados con las mejores combinaciones para regalar o disfrutar. Más variedad, mejor precio.</p>
-    <div class="hero-actions">
-      <a href="#productos" class="btn-primary">Ver todos 📦</a>
-      <a href="#envios" class="btn-outline">¿Cómo llega?</a>
-    </div>
   </section>
 
   <!-- ====== SHIPPING BAR ====== -->
@@ -99,21 +94,25 @@
           <input type="text" id="searchInput" class="search-input" placeholder="Ej: Pack Whisky + Vermut..." oninput="applyFilters()" />
         </div>
 
-        <!-- MARCA -->
-        <div class="filter-group">
-          <h4>Marca</h4>
-          <div id="brandFilter" class="filter-options"></div>
-          <button class="btn-show-more" id="brandShowMore" onclick="toggleBrands()">Ver más</button>
-        </div>
+        <button type="button" class="filter-toggle" id="filterToggle" onclick="toggleFiltros()" aria-expanded="false" aria-controls="filterPanel">Filtrar por marca y tamaño</button>
 
-        <!-- TAMAÑO -->
-        <div class="filter-group">
-          <h4>Tamaño</h4>
-          <div id="sizeFilter" class="filter-options"></div>
-          <button class="btn-show-more" id="sizeShowMore" onclick="toggleSizes()">Ver más</button>
-        </div>
+        <div class="filter-panel" id="filterPanel">
+          <!-- MARCA -->
+          <div class="filter-group">
+            <h4>Marca</h4>
+            <div id="brandFilter" class="filter-options"></div>
+            <button class="btn-show-more" id="brandShowMore" onclick="toggleBrands()">Ver más</button>
+          </div>
 
-        <button class="btn-filter-reset" onclick="resetFilters()">Quitar filtros</button>
+          <!-- TAMAÑO -->
+          <div class="filter-group">
+            <h4>Tamaño</h4>
+            <div id="sizeFilter" class="filter-options"></div>
+            <button class="btn-show-more" id="sizeShowMore" onclick="toggleSizes()">Ver más</button>
+          </div>
+
+          <button class="btn-filter-reset" onclick="resetFilters()">Quitar filtros</button>
+        </div>
       </aside>
 
       <!-- PRODUCTOS MAIN -->
@@ -249,6 +248,6 @@
   </a>
 
   <script type="module" src="hero-carousel.js"></script>
-  <script type="module" src="combos.js"></script>
+  <script type="module" src="categoria.js"></script>
 </body>
 </html>

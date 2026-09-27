@@ -1,5 +1,11 @@
 import { escucharCategoria } from "./firebase.js";
 
+// Script compartido por todas las páginas de categoría. Cada página
+// indica la suya en el <body>: data-categoria (el nombre tal cual está
+// en Firestore) y data-emoji (se usa cuando un producto no tiene foto).
+const CATEGORIA = document.body.dataset.categoria;
+const EMOJI = document.body.dataset.emoji || '🍾';
+
 // ============================================================
 //  ESTADO
 // ============================================================
@@ -30,10 +36,10 @@ function cargarProductos(productos) {
       id: p.id,
       name: p.name ?? 'Producto sin nombre',
       brand: p.brand ?? '',
-      cat: p.category ?? p.cat ?? 'Gin',
+      cat: p.category ?? p.cat ?? CATEGORIA,
       price: Number(p.price ?? 0),
       size: p.size ?? '',
-      emoji: p.emoji ?? '🍈',
+      emoji: p.emoji ?? EMOJI,
       badge: p.badge ?? null,
       oldPrice: Number(p.oldPrice ?? 0) || null,
       stock: p.stock ?? null,
@@ -54,13 +60,13 @@ function mostrarErrorFirebase() {
   if (grid) {
     grid.innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted);">
-        No se pudieron cargar los gins. Revisá la conexión con Firebase.
+        No se pudieron cargar los productos. Revisá la conexión con Firebase.
       </div>`;
   }
 }
 
 // Escucha en tiempo real solo los productos de esta categoría.
-escucharCategoria('Gin', cargarProductos, mostrarErrorFirebase);
+escucharCategoria(CATEGORIA, cargarProductos, mostrarErrorFirebase);
 
 // ============================================================
 //  FILTROS
@@ -158,8 +164,21 @@ function applyFilters() {
     return matchBrand && matchSize && matchSearch;
   });
 
+  // En celular el panel puede estar cerrado: el botón avisa cuántos
+  // filtros hay tildados.
+  const activos = selectedBrands.length + selectedSizes.length;
+  const toggle = document.getElementById('filterToggle');
+  if (toggle) toggle.textContent = activos ? `Filtrar por marca y tamaño (${activos})` : 'Filtrar por marca y tamaño';
+
   currentPage = 1;
   sortProducts(currentSort);
+}
+
+// Abre o cierra el panel de marca y tamaño (el botón solo se ve en celular).
+function toggleFiltros() {
+  const sidebar = document.querySelector('.filter-sidebar');
+  const abierto = sidebar?.classList.toggle('open');
+  document.getElementById('filterToggle')?.setAttribute('aria-expanded', String(!!abierto));
 }
 
 // ============================================================
@@ -428,7 +447,7 @@ function renderCartItems() {
   const items = Object.values(cart);
 
   if (!items.length) {
-    el.innerHTML = `<div class="cart-empty"><div class="empty-icon">🍈</div><p>Todavía no agregaste nada</p></div>`;
+    el.innerHTML = `<div class="cart-empty"><div class="empty-icon">${EMOJI}</div><p>Todavía no agregaste nada</p></div>`;
     return;
   }
 
@@ -468,6 +487,7 @@ function irACheckout() {
 // ============================================================
 window.toggleBrands = toggleBrands;
 window.toggleSizes = toggleSizes;
+window.toggleFiltros = toggleFiltros;
 window.applyFilters = applyFilters;
 window.sortProducts = sortProducts;
 window.changePage = changePage;

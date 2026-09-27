@@ -1,7 +1,7 @@
 // ============================================================
 //  CHECKOUT — GLOBAL IMPORTADOS
 //  Página compartida por todas las categorías: lee el carrito
-//  guardado en localStorage por cada sección (whisky.js, etc.)
+//  guardado en localStorage por el inicio y las categorías (categoria.js)
 //  y crea el pedido en el servidor (/api), que es quien valida
 //  datos, precios y stock antes de guardarlo.
 // ============================================================

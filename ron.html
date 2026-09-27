@@ -22,10 +22,10 @@
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="ron.css" />
+  <link rel="stylesheet" href="categoria.css" />
   <script src="theme.js" defer></script>
 </head>
-<body data-hero-section="ron">
+<body data-hero-section="ron" data-categoria="Ron" data-emoji="🍹">
 
   <!-- ====== NAV ====== -->
   <nav>
@@ -66,17 +66,12 @@
     <div class="hero-carousel" id="heroCarousel" aria-hidden="true"></div>
     <div class="hero-bg"></div>
     <div class="hero-grid"></div>
-    <div class="hero-tag">🍹 Ron · Envíos a todo el país</div>
     <h1>
       <span class="accent">RON</span>
       <span>AL RITMO</span>
       <span class="under">TROPICAL</span>
     </h1>
     <p class="hero-sub">Las mejores etiquetas de Cuba, Puerto Rico, República Dominicana y más. Desde blancos hasta añejos premium.</p>
-    <div class="hero-actions">
-      <a href="#productos" class="btn-primary">Ver todos 🍹</a>
-      <a href="#envios" class="btn-outline">¿Cómo llega?</a>
-    </div>
   </section>
 
   <!-- ====== SHIPPING BAR ====== -->
@@ -99,21 +94,25 @@
           <input type="text" id="searchInput" class="search-input" placeholder="Ej: Bacardí, Havana Club..." oninput="applyFilters()" />
         </div>
 
-        <!-- MARCA -->
-        <div class="filter-group">
-          <h4>Marca</h4>
-          <div id="brandFilter" class="filter-options"></div>
-          <button class="btn-show-more" id="brandShowMore" onclick="toggleBrands()">Ver más</button>
-        </div>
+        <button type="button" class="filter-toggle" id="filterToggle" onclick="toggleFiltros()" aria-expanded="false" aria-controls="filterPanel">Filtrar por marca y tamaño</button>
 
-        <!-- TAMAÑO -->
-        <div class="filter-group">
-          <h4>Tamaño</h4>
-          <div id="sizeFilter" class="filter-options"></div>
-          <button class="btn-show-more" id="sizeShowMore" onclick="toggleSizes()">Ver más</button>
-        </div>
+        <div class="filter-panel" id="filterPanel">
+          <!-- MARCA -->
+          <div class="filter-group">
+            <h4>Marca</h4>
+            <div id="brandFilter" class="filter-options"></div>
+            <button class="btn-show-more" id="brandShowMore" onclick="toggleBrands()">Ver más</button>
+          </div>
 
-        <button class="btn-filter-reset" onclick="resetFilters()">Quitar filtros</button>
+          <!-- TAMAÑO -->
+          <div class="filter-group">
+            <h4>Tamaño</h4>
+            <div id="sizeFilter" class="filter-options"></div>
+            <button class="btn-show-more" id="sizeShowMore" onclick="toggleSizes()">Ver más</button>
+          </div>
+
+          <button class="btn-filter-reset" onclick="resetFilters()">Quitar filtros</button>
+        </div>
       </aside>
 
       <!-- PRODUCTOS MAIN -->
@@ -249,6 +248,6 @@
   </a>
 
   <script type="module" src="hero-carousel.js"></script>
-  <script type="module" src="ron.js"></script>
+  <script type="module" src="categoria.js"></script>
 </body>
 </html>
