@@ -67,6 +67,227 @@ function previewImg(inputId, previewId) {
 }
 window.previewImg = previewImg;
 
+// ─────────────────────────────────────────────
+// FOTOS PROPIAS (Vercel Blob)
+// El navegador achica cada foto (WebP) y la guarda en el almacenamiento
+// de la tienda con /api/subir-foto. Las que están en otros sitios se
+// descargan con /api/traer-foto y se suben igual.
+// ─────────────────────────────────────────────
+const LADO_MAXIMO_FOTO = { productos: 1000, carruseles: 1600 };
+
+function esFotoPropia(url) {
+  try { return new URL(url).hostname.endsWith('.public.blob.vercel-storage.com'); } catch { return false; }
+}
+
+async function tokenAdmin() {
+  const user = window.auth?.currentUser;
+  if (!user) throw new Error('La sesión del panel venció. Volvé a iniciar sesión.');
+  return user.getIdToken();
+}
+
+// Achica la foto a `ladoMaximo` px y la pasa a WebP. Si el navegador no
+// genera WebP (Safari viejo), usa JPG con fondo blanco.
+async function prepararFoto(archivo, ladoMaximo) {
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(archivo);
+  } catch {
+    throw new Error('No se pudo abrir la foto. Probá con un JPG o PNG.');
+  }
+  const escala = Math.min(1, ladoMaximo / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bitmap.width * escala);
+  canvas.height = Math.round(bitmap.height * escala);
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+
+  const exportar = tipo => new Promise(resolve => canvas.toBlob(resolve, tipo, 0.85));
+  let foto = await exportar('image/webp');
+  if (!foto || foto.type !== 'image/webp') {
+    ctx.globalCompositeOperation = 'destination-over';
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    foto = await exportar('image/jpeg');
+  }
+  if (!foto) throw new Error('No se pudo procesar la foto.');
+  return foto;
+}
+
+function aBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const lector = new FileReader();
+    lector.onload = () => resolve(String(lector.result).split(',')[1]);
+    lector.onerror = () => reject(lector.error);
+    lector.readAsDataURL(blob);
+  });
+}
+
+async function subirFoto(archivo, carpeta, nombre) {
+  const foto = await prepararFoto(archivo, LADO_MAXIMO_FOTO[carpeta]);
+  const res = await fetch('/api/subir-foto', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await tokenAdmin()}` },
+    body: JSON.stringify({ carpeta, nombre, tipo: foto.type, imagen: await aBase64(foto) })
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.url) throw new Error(data.error || `No se pudo subir la foto (error ${res.status}).`);
+  return data.url;
+}
+
+async function copiarFoto(url, carpeta, nombre) {
+  const res = await fetch('/api/traer-foto?url=' + encodeURIComponent(url), {
+    headers: { Authorization: `Bearer ${await tokenAdmin()}` }
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || `No se pudo traer la foto (error ${res.status}).`);
+  }
+  return subirFoto(await res.blob(), carpeta, nombre);
+}
+
+// Botón "Subir foto" de cada campo de imagen: sube el archivo elegido y
+// pone la URL nueva en el campo; después se guarda como siempre.
+function botonSubirFoto(inputId, previewId, carpeta, nombreInputId = '', nombreFijo = '') {
+  return `<button type="button" class="btn btn-ghost btn-sm btn-subir-foto" onclick="elegirFoto(this,'${inputId}','${previewId}','${carpeta}','${nombreInputId}','${nombreFijo}')">📤 Subir foto</button>`;
+}
+
+function elegirFoto(boton, inputId, previewId, carpeta, nombreInputId = '', nombreFijo = '') {
+  const selector = document.createElement('input');
+  selector.type = 'file';
+  selector.accept = 'image/*';
+  selector.onchange = async () => {
+    const archivo = selector.files && selector.files[0];
+    if (!archivo) return;
+    const texto = boton.textContent;
+    boton.disabled = true;
+    boton.textContent = '⏳ Subiendo...';
+    try {
+      const nombre = nombreFijo || document.getElementById(nombreInputId)?.value.trim() || archivo.name.replace(/\.[^.]+$/, '');
+      const url = await subirFoto(archivo, carpeta, nombre);
+      const input = document.getElementById(inputId);
+      if (input) input.value = url;
+      previewImg(inputId, previewId);
+      showToast('✅ Foto subida. Falta guardar para que se vea en el sitio.');
+    } catch (e) {
+      showToast('❌ ' + e.message, 'err');
+    } finally {
+      boton.disabled = false;
+      boton.textContent = texto;
+    }
+  };
+  selector.click();
+}
+window.elegirFoto = elegirFoto;
+
+// Fotos que todavía están en otros sitios: las de los productos y las de
+// los carruseles (si una sección no tiene fotos cargadas, el sitio usa
+// las de referencia, que también están afuera).
+function fotosCarrusel(key) {
+  const cargadas = window.DATA.carousels?.[key]?.images || [];
+  return cargadas.length ? cargadas : (window.CAROUSEL_DEFAULTS?.[key] || []);
+}
+
+function fotosExternas() {
+  const productos = (window.DATA.productos || []).filter(p => p.image && !esFotoPropia(p.image));
+  const carruseles = window.CAROUSEL_SECTIONS
+    .map(s => ({ ...s, externas: fotosCarrusel(s.key).filter(u => !esFotoPropia(u)).length }))
+    .filter(s => s.externas > 0);
+  const total = productos.length + carruseles.reduce((n, s) => n + s.externas, 0);
+  return { productos, carruseles, total };
+}
+
+window.copiaFotos = { enCurso: false, hechas: 0, copiadas: 0, total: 0, fallidas: [] };
+
+function avisoFotosExternas() {
+  const { total } = fotosExternas();
+  const estado = window.copiaFotos;
+  if (!total && !estado.enCurso && !estado.fallidas.length) return '';
+
+  const fallidas = estado.fallidas.length ? `
+      <div class="fotos-fallidas">
+        <strong>No se pudieron copiar (cambiales la foto a mano):</strong>
+        <ul>${estado.fallidas.map(f => `<li>${esc(f.nombre)}: ${esc(f.error)}</li>`).join('')}</ul>
+      </div>` : '';
+
+  return `
+    <div class="fotos-alert">
+      <div class="fotos-alert-text">
+        <span>🖼️</span>
+        <span>${estado.enCurso
+          ? '<strong>Copiando las fotos a tu almacenamiento.</strong> No cierres el panel hasta que termine.'
+          : total
+            ? `<strong>${total} ${total === 1 ? 'foto está' : 'fotos están'} en otros sitios.</strong> Si esos sitios las borran, en la tienda deja de verse la foto.`
+            : 'Todas las fotos que se pudieron copiar ya están en tu almacenamiento.'}</span>
+        ${total ? `<button type="button" class="btn btn-primary btn-sm" id="btnCopiarFotos" onclick="copiarFotosExternas()" ${estado.enCurso ? 'disabled' : ''}>${textoBotonCopia()}</button>` : ''}
+      </div>
+      ${fallidas}
+    </div>`;
+}
+
+function textoBotonCopia() {
+  const e = window.copiaFotos;
+  if (e.enCurso) return `⏳ Copiando ${e.hechas} de ${e.total}...`;
+  return e.fallidas.length ? '🔁 Volver a intentar' : '📦 Copiar a mi almacenamiento';
+}
+
+function actualizarBotonCopia() {
+  const boton = document.getElementById('btnCopiarFotos');
+  if (boton) boton.textContent = textoBotonCopia();
+}
+
+async function copiarFotosExternas() {
+  const estado = window.copiaFotos;
+  if (estado.enCurso) return;
+  const { productos, carruseles, total } = fotosExternas();
+  if (!total) return;
+
+  Object.assign(estado, { enCurso: true, hechas: 0, copiadas: 0, total, fallidas: [] });
+  render(window.currentPage);
+
+  for (const p of productos) {
+    try {
+      const url = await copiarFoto(p.image, 'productos', p.name);
+      await window.fsUpdateDoc(window.fsDoc(window.db, 'productos', p.docId), { image: url });
+      estado.copiadas++;
+    } catch (e) {
+      estado.fallidas.push({ nombre: p.name || 'Producto sin nombre', error: e.message });
+    }
+    estado.hechas++;
+    actualizarBotonCopia();
+  }
+
+  // Cada carrusel se guarda entero: las fotos que no se pudieron copiar
+  // quedan con su dirección de siempre, no se pierde ninguna.
+  for (const s of carruseles) {
+    const nuevas = [];
+    for (const url of fotosCarrusel(s.key)) {
+      if (esFotoPropia(url)) { nuevas.push(url); continue; }
+      try {
+        nuevas.push(await copiarFoto(url, 'carruseles', s.key));
+        estado.copiadas++;
+      } catch (e) {
+        nuevas.push(url);
+        estado.fallidas.push({ nombre: `Carrusel ${s.label}`, error: e.message });
+      }
+      estado.hechas++;
+      actualizarBotonCopia();
+    }
+    try {
+      await window.fsSetDoc(window.fsDoc(window.db, 'heroCarousels', s.key), { images: nuevas }, { merge: true });
+    } catch (e) {
+      estado.fallidas.push({ nombre: `Carrusel ${s.label}`, error: 'No se pudo guardar: ' + e.message });
+    }
+  }
+
+  estado.enCurso = false;
+  showToast(estado.fallidas.length
+    ? `⚠️ Se copiaron ${estado.copiadas} de ${total} fotos. Mirá la lista de las que faltan.`
+    : `✅ Listo: las ${total} fotos ya están en tu almacenamiento.`, estado.fallidas.length ? 'err' : 'ok');
+  render(window.currentPage);
+}
+window.copiarFotosExternas = copiarFotosExternas;
+
 async function fbAdd(data) {
   setSaving('saving');
   try {
@@ -227,6 +448,7 @@ function pageDashboard() {
       <span>Tenés <strong>${paraAtender} ${paraAtender === 1 ? 'pedido' : 'pedidos'}</strong> para atender</span>
       <span class="go">Ver pedidos →</span>
     </button>` : ''}
+    ${avisoFotosExternas()}
     <div class="stats-row">
       <div class="stat-card"><div class="stat-icon">🍾</div><div class="stat-info"><strong>${all.length}</strong><span>Productos totales</span></div></div>
       <div class="stat-card"><div class="stat-icon green">✅</div><div class="stat-info"><strong>${active}</strong><span>Activos en el sitio</span></div></div>
@@ -729,7 +951,10 @@ function carouselCard(section, images) {
     return `
       <div class="field">
         <label>Foto ${i + 1}</label>
-        <input id="${inputId}" value="${esc(url)}" placeholder="https://..." oninput="previewImg('${inputId}','${prevId}')"/>
+        <div class="img-input-row">
+          <input id="${inputId}" value="${esc(url)}" placeholder="https://... o subí una foto" oninput="previewImg('${inputId}','${prevId}')"/>
+          ${botonSubirFoto(inputId, prevId, 'carruseles', '', section.key)}
+        </div>
         <div class="img-preview-wrap"><div class="img-preview" id="${prevId}">${url ? `<img src="${esc(url)}" alt=""/>` : `<span>Vista previa</span>`}</div></div>
       </div>`;
   }).join('');
@@ -886,8 +1111,11 @@ function pageCategoryManager(cat) {
       </div>
 
       <div class="field">
-        <label>URL imagen</label>
-        <input id="npImg_${cat}" placeholder="https://..." oninput="previewImg('npImg_${cat}','npImgPrev_${cat}')"/>
+        <label>Imagen</label>
+        <div class="img-input-row">
+          <input id="npImg_${cat}" placeholder="https://... o subí una foto" oninput="previewImg('npImg_${cat}','npImgPrev_${cat}')"/>
+          ${botonSubirFoto(`npImg_${cat}`, `npImgPrev_${cat}`, 'productos', `npName_${cat}`)}
+        </div>
         <div class="img-preview-wrap"><div class="img-preview" id="npImgPrev_${cat}"><span>Vista previa</span></div></div>
       </div>
 

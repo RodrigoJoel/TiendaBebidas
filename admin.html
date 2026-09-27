@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=5">
+  <link rel="stylesheet" href="admin.css?v=6">
 </head>
 <body>
 <div id="adminLoading">
@@ -125,8 +125,11 @@
     </div>
 
     <div class="field">
-      <label>URL imagen</label>
-      <input id="pmImg" placeholder="https://..." oninput="previewImg('pmImg','pmImgPrev')"/>
+      <label>Imagen</label>
+      <div class="img-input-row">
+        <input id="pmImg" placeholder="https://... o subí una foto" oninput="previewImg('pmImg','pmImgPrev')"/>
+        <button type="button" class="btn btn-ghost btn-sm btn-subir-foto" onclick="elegirFoto(this,'pmImg','pmImgPrev','productos','pmName')">📤 Subir foto</button>
+      </div>
       <div class="img-preview-wrap"><div class="img-preview" id="pmImgPrev"><span>Vista previa</span></div></div>
     </div>
 
@@ -161,6 +164,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-app.js";
 import { getFirestore, doc, collection, onSnapshot, setDoc, addDoc, deleteDoc, updateDoc, getDocs, query, orderBy, limit, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
+import { FOTOS_CARRUSEL_POR_DEFECTO } from "./carrusel-fotos.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDRKn7CkbwblMLohJjq7oIE73vXiWlrB70",
@@ -190,6 +194,7 @@ window.fsGetDocs = getDocs;
 window.fsOnSnapshot = onSnapshot;
 window.fsRunTransaction = runTransaction;
 window.fsServerTimestamp = serverTimestamp;
+window.CAROUSEL_DEFAULTS = FOTOS_CARRUSEL_POR_DEFECTO;
 
 window.toggleAdminMenu = function () {
   document.getElementById("adminDropdown").classList.toggle("show");
@@ -259,6 +264,6 @@ onAuthStateChanged(auth, (user) => {
 });
 </script>
 
-<script src="admin-script.js?v=4"></script>
+<script src="admin-script.js?v=5"></script>
 </body>
 </html>

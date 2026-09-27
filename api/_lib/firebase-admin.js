@@ -5,7 +5,7 @@
 // ============================================================
 const admin = require('firebase-admin');
 
-function getDb() {
+function iniciar() {
   if (!admin.apps.length) {
     const raw = (process.env.FIREBASE_SERVICE_ACCOUNT_KEY || '').trim();
     if (!raw) throw new Error('Falta configurar FIREBASE_SERVICE_ACCOUNT_KEY');
@@ -15,7 +15,16 @@ function getDb() {
       credential: admin.credential.cert(JSON.parse(json))
     });
   }
+}
+
+function getDb() {
+  iniciar();
   return admin.firestore();
 }
 
-module.exports = { getDb };
+function getAuth() {
+  iniciar();
+  return admin.auth();
+}
+
+module.exports = { getDb, getAuth };
