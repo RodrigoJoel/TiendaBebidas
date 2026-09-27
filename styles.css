@@ -197,12 +197,11 @@ nav {
 
 /* ───── HERO ───── */
 .hero {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
-  padding: 11rem 2rem 4rem;
+  padding: 10rem 2rem 3.5rem;
   max-width: 100% !important;
   padding-left: 2rem;
   padding-right: 2rem;
@@ -242,7 +241,7 @@ nav {
   font-weight: 600;
   color: var(--sky);
   letter-spacing: 0.5px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   position: relative;
 }
 
@@ -269,7 +268,7 @@ nav {
 
 h1 {
   font-family: 'Anton', sans-serif;
-  font-size: clamp(3.5rem, 10vw, 8rem);
+  font-size: clamp(2.8rem, 7vw, 5.5rem);
   line-height: 0.92;
   letter-spacing: 2px;
   position: relative;
@@ -285,15 +284,15 @@ h1 .under {
 }
 
 .hero-sub {
-  margin-top: 1.5rem;
-  font-size: 1.1rem;
+  margin-top: 1.25rem;
+  font-size: 1.05rem;
   color: var(--muted);
-  max-width: 520px;
-  line-height: 1.7;
+  max-width: 560px;
+  line-height: 1.65;
 }
 
 .hero-actions {
-  margin-top: 2.5rem;
+  margin-top: 2rem;
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
