@@ -106,7 +106,7 @@ function renderProducts() {
             <span class="prod-price">${formatPrice(p.price)}</span>
             ${p.old ? `<span class="prod-price-old">${formatPrice(p.old)}</span>` : ''}
           </div>
-          <button class="btn-add" id="btn-${p.id}" ${sinStock ? 'disabled' : ''} onclick="addToCart('${p.id}')" style="${sinStock ? 'opacity:.4;cursor:not-allowed' : ''}">${sinStock ? '✕' : '+'}</button>
+          <button class="btn-add" id="btn-${p.id}" ${sinStock ? 'disabled' : ''} onclick="addToCart('${p.id}')">${sinStock ? 'Sin stock' : 'Agregar'}</button>
         </div>
       </div>
     </div>
@@ -169,10 +169,10 @@ function addToCart(id) {
   const btn = document.getElementById('btn-' + id);
   if (btn) {
     btn.classList.add('added');
-    btn.textContent = '✓';
+    btn.textContent = 'Agregado';
     setTimeout(() => {
       btn.classList.remove('added');
-      btn.textContent = '+';
+      btn.textContent = 'Agregar';
     }, 900);
   }
 

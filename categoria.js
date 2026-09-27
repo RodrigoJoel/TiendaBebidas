@@ -278,7 +278,7 @@ function renderProducts(items) {
             <span class="prod-price">${formatPrice(p.price)}</span>
             ${p.oldPrice ? `<span class="prod-price-old" style="margin-left:.4rem">${formatPrice(p.oldPrice)}</span>` : ''}
           </div>
-          <button class="btn-add" id="btn-${p.id}" ${sinStock ? 'disabled' : ''} onclick="event.stopPropagation(); addToCart('${p.id}')" style="${sinStock ? 'opacity:.4;cursor:not-allowed' : ''}">${sinStock ? '✕' : '+'}</button>
+          <button class="btn-add" id="btn-${p.id}" ${sinStock ? 'disabled' : ''} onclick="event.stopPropagation(); addToCart('${p.id}')">${sinStock ? 'Sin stock' : 'Agregar'}</button>
         </div>
       </div>
     </div>
@@ -319,7 +319,7 @@ function openProductModal(id) {
           <span class="prod-price">${formatPrice(prod.price)}</span>
           ${prod.oldPrice ? `<span class="prod-price-old">${formatPrice(prod.oldPrice)}</span>` : ''}
         </div>
-        <button class="btn-primary" id="modalAddBtn" ${sinStock ? 'disabled' : ''} style="${sinStock ? 'opacity:.5;cursor:not-allowed' : ''}" onclick="addToCartFromModal('${prod.id}')">${sinStock ? 'Sin stock' : 'Agregar al carrito 🛒'}</button>
+        <button class="btn-add" id="modalAddBtn" ${sinStock ? 'disabled' : ''} onclick="addToCartFromModal('${prod.id}')">${sinStock ? 'Sin stock' : 'Agregar al carrito'}</button>
       </div>
     </div>
   `;
@@ -333,8 +333,8 @@ function addToCartFromModal(id) {
   const agregado = addToCart(id);
   const btn = document.getElementById('modalAddBtn');
   if (btn) {
-    btn.textContent = agregado ? 'Agregado ✓' : 'No hay más stock';
-    setTimeout(() => { btn.textContent = 'Agregar al carrito 🛒'; }, 900);
+    btn.textContent = agregado ? 'Agregado' : 'No hay más stock';
+    setTimeout(() => { btn.textContent = 'Agregar al carrito'; }, 900);
   }
 }
 
@@ -407,10 +407,10 @@ function addToCart(id) {
   const btn = document.getElementById('btn-' + id);
   if (btn) {
     btn.classList.add('added');
-    btn.textContent = '✓';
+    btn.textContent = 'Agregado';
     setTimeout(() => {
       btn.classList.remove('added');
-      btn.textContent = '+';
+      btn.textContent = 'Agregar';
     }, 900);
   }
 

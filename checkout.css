@@ -21,6 +21,7 @@
   --nav-bg: rgba(8, 15, 26, 0.9);
   --footer-bg: #040A14;
   --r: 14px;
+  --precio: #D9BD7E; /* mismo dorado que los precios de la tienda (productos.css) */
 }
 html[data-theme="light"] {
   --sky: #0F5FA0;
@@ -35,6 +36,7 @@ html[data-theme="light"] {
   --border: rgba(28, 22, 12, 0.12);
   --nav-bg: rgba(247, 241, 228, 0.9);
   --footer-bg: #EDE1C8;
+  --precio: #85622A;
 }
 html { scroll-behavior: smooth; }
 body {
@@ -352,9 +354,23 @@ textarea.form-input { resize: vertical; }
   margin-top: 0.5rem;
   padding-top: 0.75rem;
   font-weight: 700;
-  color: var(--sky);
+  color: var(--text);
   font-size: 1.05rem;
+  align-items: baseline;
 }
+/* Montos con el estilo de precios de la tienda (Libre Caslon, dorado) */
+.summary-item-row span:last-child,
+.summary-row span:last-child {
+  font-family: 'Libre Caslon Text', Georgia, serif;
+  white-space: nowrap;
+}
+.summary-row span:last-child { color: var(--text); }
+.summary-item-row span:last-child,
+.summary-total span:last-child {
+  font-weight: 700;
+  color: var(--precio);
+}
+.summary-total span:last-child { font-size: 1.3rem; }
 
 /* ───── SIDEBAR ───── */
 .checkout-side {
@@ -382,10 +398,10 @@ textarea.form-input { resize: vertical; }
 .confirm-transfer .transfer-note { display: none; }
 .confirm-transfer-total { text-align: center; margin-bottom: 0.75rem; }
 .confirm-transfer-total strong {
-  color: var(--sky);
-  font-family: 'Bebas Neue', sans-serif;
+  color: var(--precio);
+  font-family: 'Libre Caslon Text', Georgia, serif;
+  font-weight: 700;
   font-size: 1.5rem;
-  letter-spacing: 1px;
 }
 .btn-whatsapp {
   display: flex;

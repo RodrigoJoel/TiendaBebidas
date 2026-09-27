@@ -1,0 +1,210 @@
+/* ============================================================
+   PRODUCTOS Y PRECIOS — compartido por el inicio y las categorías
+   Tarjeta de producto, precios y carrito: foto sobre fondo blanco
+   (la mayoría de las fotos vienen con fondo blanco), nombre en
+   Hanken Grotesk y precios en Libre Caslon, en el dorado del emblema.
+   ============================================================ */
+:root {
+  --precio: #D9BD7E;
+  --pozo: #FFFFFF;
+  --btn-agregar-bg: #D9BD7E;
+  --btn-agregar-fg: #0D1E25;
+}
+html[data-theme="light"] {
+  --precio: #85622A;
+  --btn-agregar-bg: #163946;
+  --btn-agregar-fg: #F2E9D4;
+}
+
+/* ───── GRILLA ───── */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 2.25rem 1.25rem;
+}
+
+/* ───── TARJETA DE PRODUCTO ───── */
+/* La tarjeta es una columna y el precio se apoya abajo: así los precios
+   de una misma fila quedan alineados aunque los nombres ocupen 1 o 2 renglones */
+.prod-card {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Hanken Grotesk', 'DM Sans', sans-serif;
+}
+
+.prod-img {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4.5rem;
+  background: var(--pozo);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+html[data-theme="light"] .prod-img {
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+/* El sello va sobre la foto blanca: mismos colores en los dos temas */
+.prod-badge {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  background: #0D1E25;
+  color: #D9BD7E;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+}
+.prod-badge.new {
+  color: #8FE3B0;
+}
+
+.prod-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-top: 0.9rem;
+}
+
+.prod-name {
+  font-weight: 600;
+  font-size: 0.98rem;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.prod-brand {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 0.15rem;
+}
+
+.prod-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.7rem;
+}
+
+.prod-price {
+  font-family: 'Libre Caslon Text', Georgia, serif;
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: var(--precio);
+}
+.prod-price-old {
+  font-size: 0.82rem;
+  color: var(--muted);
+  text-decoration: line-through;
+  margin-left: 0.35rem;
+}
+
+.btn-add {
+  font-family: 'Hanken Grotesk', 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  background: var(--btn-agregar-bg);
+  color: var(--btn-agregar-fg);
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 0.85rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+.btn-add:hover {
+  filter: brightness(1.08);
+}
+.btn-add.added {
+  background: var(--lime);
+  color: #04120A;
+}
+.btn-add:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: none;
+}
+
+/* Tarjetas angostas (celular, o muchas columnas): el botón va debajo del precio */
+@container (max-width: 250px) {
+  .prod-bottom {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .btn-add {
+    padding: 0.6rem;
+  }
+}
+
+/* ───── CARRITO ───── */
+.cart-item-img {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--pozo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+}
+.cart-item-img img {
+  padding: 0.25rem;
+}
+.cart-item-price {
+  font-family: 'Libre Caslon Text', Georgia, serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--precio);
+  margin-top: 0.2rem;
+}
+.cart-total {
+  align-items: baseline;
+}
+.cart-total strong {
+  font-family: 'Libre Caslon Text', Georgia, serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--precio);
+}
+
+.btn-checkout {
+  width: 100%;
+  background: var(--btn-agregar-bg);
+  color: var(--btn-agregar-fg);
+  border: none;
+  border-radius: 4px;
+  padding: 1rem;
+  font-family: 'Hanken Grotesk', 'DM Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+.btn-checkout:hover {
+  filter: brightness(1.08);
+}
+.btn-checkout:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: none;
+}
+
+/* ───── CELULAR: productos de a 2 por fila ───── */
+@media (max-width: 560px) {
+  .products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.75rem 0.9rem;
+  }
+}
