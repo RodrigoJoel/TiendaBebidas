@@ -383,6 +383,34 @@ h1 .under {
     linear-gradient(0deg, var(--dark) 0%, transparent 35%);
 }
 
+/* Botellas 3D de la portada (botellas-3d.js): se ubican solas en el
+   espacio libre a la derecha del texto y aparecen cuando cargan. */
+.hero-botellas {
+  position: absolute;
+  z-index: 0;
+  opacity: 0;
+  visibility: hidden;
+}
+.hero-botellas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+@media (max-width: 640px) {
+  .hero-botellas {
+    position: relative;
+    order: 1;
+    align-self: stretch;
+    height: 150px;
+    margin-top: 1.25rem;
+  }
+}
+.hero-sub,
+.hero-actions {
+  position: relative;
+  z-index: 1;
+}
+
 /* ───── SHIPPING BAR ───── */
 .shipping-bar {
   background: var(--blue);
