@@ -1,12 +1,14 @@
 // ============================================================
 //  BOTELLAS 3D DE LA PORTADA — GLOBAL IMPORTADOS
-//  Botellas reales girando al costado del título, una por categoría.
+//  Una ronda giratoria con una botella real por sección (12), como
+//  un exhibidor. Debajo se lee la sección de la botella que está al
+//  frente; tocar una botella (o ese nombre) lleva a su sección.
+//  Se puede girar arrastrando con el dedo o el mouse.
 //  Cada botella es la foto del producto (recortada, en /botellas/)
 //  envuelta sobre un volumen con la silueta de esa misma botella
-//  (botellas/perfiles.json). De frente se ve igual que la foto; al
-//  girar, la parte de atrás repite el frente.
-//  Al pasar el mouse gira más rápido y al tocarla lleva a su categoría.
-//  Three.js dibuja; GSAP anima la entrada y el hover.
+//  (botellas/perfiles.json). De frente se ve igual que la foto; atrás
+//  repite el frente.
+//  Three.js dibuja; GSAP anima la entrada, el giro y el hover.
 //  Las librerías se piden recién cuando la página terminó de cargar,
 //  así no demoran lo demás. Sin WebGL, la portada queda como siempre.
 // ============================================================
@@ -14,23 +16,27 @@
 const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.186.1/+esm';
 const GSAP_URL = 'https://cdn.jsdelivr.net/npm/gsap@3.15.0/+esm';
 
-// Qué botella va en cada categoría y su alto relativo (las fotos
-// vienen todas del mismo alto; esto respeta el tamaño real).
-const BOTELLAS = {
-  vodka: { pagina: 'vodka.html', alto: 1 },
-  gin: { pagina: 'gin.html', alto: 0.84 },
-  whisky: { pagina: 'whisky.html', alto: 0.86 },
-  espumante: { pagina: 'espumante.html', alto: 0.93 },
-  tequila: { pagina: 'tequila.html', alto: 1.02 },
-  licores: { pagina: 'licores.html', alto: 0.76 },
-};
-
-// Orden de izquierda a derecha según el espacio disponible.
-const FILA_6 = ['vodka', 'gin', 'whisky', 'espumante', 'tequila', 'licores'];
-const FILA_5 = ['vodka', 'gin', 'whisky', 'espumante', 'tequila'];
-const FILA_3 = ['gin', 'whisky', 'espumante'];
+// En el mismo orden que el menú de categorías. "alto" es el tamaño
+// relativo real (las fotos vienen todas del mismo alto).
+const SECCIONES = [
+  { clave: 'whisky', nombre: 'Whisky', pagina: 'whisky.html', alto: 0.86 },
+  { clave: 'ron', nombre: 'Ron', pagina: 'ron.html', alto: 0.9 },
+  { clave: 'vodka', nombre: 'Vodka', pagina: 'vodka.html', alto: 1 },
+  { clave: 'tequila', nombre: 'Tequila', pagina: 'tequila.html', alto: 1.02 },
+  { clave: 'gin', nombre: 'Gin', pagina: 'gin.html', alto: 0.84 },
+  { clave: 'licores', nombre: 'Licores', pagina: 'licores.html', alto: 0.76 },
+  { clave: 'aguardiente', nombre: 'Aguardiente', pagina: 'aguardiente.html', alto: 0.62 },
+  { clave: 'espumante', nombre: 'Espumante', pagina: 'espumante.html', alto: 0.93 },
+  { clave: 'cerveza', nombre: 'Cerveza', pagina: 'cerveza.html', alto: 0.7 },
+  { clave: 'vino', nombre: 'Vino', pagina: 'vino.html', alto: 0.95 },
+  { clave: 'energizante', nombre: 'Energizante', pagina: 'energizante.html', alto: 0.5 },
+  { clave: 'combos', nombre: 'Combos', pagina: 'combos.html', alto: 0.78 },
+];
 const ALTO_BASE = 3.2; // alto en unidades 3D de una botella de alto 1
-const SEPARACION = 0.32;
+const HUECO = 0.55; // espacio entre botellas en la ronda
+const VEL_RUEDA = 0.22; // radianes por segundo (una vuelta cada ~28 s)
+const ELEVACION = 0.3; // la cámara mira la ronda un poco desde arriba
+const PUNTOS_PERFIL = 64;
 
 // ---------- Carga diferida ----------
 function cuandoEsteLibre(fn) {
@@ -48,13 +54,24 @@ function hayWebGL() {
   }
 }
 
+// El perfil viene con más puntos de los necesarios; se achica para
+// que doce botellas anden livianas en el celular.
+function remuestrear(perfil, n) {
+  return Array.from({ length: n }, (_, i) => {
+    const x = (i / (n - 1)) * (perfil.length - 1);
+    const a = Math.floor(x);
+    const b = Math.min(a + 1, perfil.length - 1);
+    return perfil[a] + (perfil[b] - perfil[a]) * (x - a);
+  });
+}
+
 // ---------- Volumen de la botella ----------
 // Media botella (de -90° a 90°) con la foto proyectada de frente: cada
 // punto toma el píxel que la cámara de la foto veía ahí. Se usa dos
 // veces (la segunda girada 180°) para cerrar la botella.
 function geometriaMitad(THREE, perfil, aspecto, alto) {
   const n = perfil.length;
-  const lados = 36;
+  const lados = 28;
   const pos = [];
   const uv = [];
   const idx = [];
@@ -87,7 +104,7 @@ function geometriaMitad(THREE, perfil, aspecto, alto) {
 // Tapa de arriba: un disco con el color de la punta de la foto.
 function geometriaTapa(THREE, perfil, alto) {
   const r = perfil[perfil.length - 1] * alto;
-  const g = new THREE.CircleGeometry(Math.max(r, 0.01), 24);
+  const g = new THREE.CircleGeometry(Math.max(r, 0.01), 20);
   g.rotateX(-Math.PI / 2);
   g.translate(0, alto, 0);
   const uv = g.attributes.uv;
@@ -95,13 +112,12 @@ function geometriaTapa(THREE, perfil, alto) {
   return g;
 }
 
-function crearBotella(THREE, clave, datos, textura) {
-  const conf = BOTELLAS[clave];
-  const alto = ALTO_BASE * conf.alto;
-  const { perfil, aspecto } = datos;
+function crearBotella(THREE, seccion, datos, textura, texSombra) {
+  const alto = ALTO_BASE * seccion.alto;
+  const perfil = remuestrear(datos.perfil, PUNTOS_PERFIL);
 
-  const raiz = new THREE.Group(); // posición en la fila y entrada
-  const giro = new THREE.Group(); // giro continuo, flotación y hover
+  const raiz = new THREE.Group(); // lugar en la ronda y entrada
+  const giro = new THREE.Group(); // giro propio y hover
   raiz.add(giro);
 
   // La foto ya trae su luz; el brillo propio la mantiene fiel y la
@@ -117,7 +133,7 @@ function crearBotella(THREE, clave, datos, textura) {
     alphaTest: 0.02,
     side: THREE.DoubleSide,
   });
-  const geo = geometriaMitad(THREE, perfil, aspecto, alto);
+  const geo = geometriaMitad(THREE, perfil, datos.aspecto, alto);
   const frente = new THREE.Mesh(geo, material);
   const dorso = new THREE.Mesh(geo, material);
   dorso.rotation.y = Math.PI;
@@ -127,7 +143,7 @@ function crearBotella(THREE, clave, datos, textura) {
   // Capa de reflejos: suma las líneas de luz del estudio sobre el vidrio.
   const puntos = perfil.map((r, i) => new THREE.Vector2(r * alto * 1.004, (i / (perfil.length - 1)) * alto));
   const reflejo = new THREE.Mesh(
-    new THREE.LatheGeometry(puntos, 48),
+    new THREE.LatheGeometry(puntos, 32),
     new THREE.MeshStandardMaterial({
       color: 0xffffff,
       metalness: 1,
@@ -138,16 +154,22 @@ function crearBotella(THREE, clave, datos, textura) {
       depthWrite: false,
     })
   );
-  reflejo.renderOrder = 10;
   giro.add(reflejo);
 
   const radio = Math.max(...perfil) * alto;
-  const zona = new THREE.Mesh(new THREE.CylinderGeometry(radio * 1.1, radio * 1.1, alto, 12), new THREE.MeshBasicMaterial({ visible: false }));
+  const zona = new THREE.Mesh(new THREE.CylinderGeometry(radio * 1.1, radio * 1.1, alto, 10), new THREE.MeshBasicMaterial({ visible: false }));
   zona.position.y = alto / 2;
-  zona.userData.clave = clave;
+  zona.userData.clave = seccion.clave;
   raiz.add(zona);
 
-  return { clave, pagina: conf.pagina, raiz, giro, frente, dorso, zona, alto, radio, angulo: 0, extra: 0, vel: 0, fase: Math.random() * Math.PI * 2 };
+  const sombra = new THREE.Mesh(
+    new THREE.PlaneGeometry(radio * 3.4, radio * 3.4),
+    new THREE.MeshBasicMaterial({ map: texSombra, transparent: true, depthWrite: false, opacity: 0 })
+  );
+  sombra.rotation.x = -Math.PI / 2;
+  sombra.position.y = 0.005;
+
+  return { ...seccion, raiz, giro, frente, dorso, tapa, reflejo, zona, sombra, material, alto, radio, angulo: 0, extra: 0, xw: 0, zw: 0 };
 }
 
 // Sombra suave debajo de cada botella.
@@ -156,7 +178,7 @@ function texturaSombra(THREE) {
   c.width = c.height = 128;
   const ctx = c.getContext('2d');
   const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-  g.addColorStop(0, 'rgba(0,0,0,0.55)');
+  g.addColorStop(0, 'rgba(0,0,0,0.5)');
   g.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 128, 128);
@@ -188,7 +210,7 @@ function crearEntorno(THREE, renderer) {
 }
 
 // ---------- Ubicación en la portada ----------
-// En celulares van en una tira debajo de los botones (el lugar lo
+// En celulares van en una franja debajo de los botones (el lugar lo
 // reserva styles.css). En pantallas más anchas buscan el espacio
 // libre a la derecha del texto: todo el alto si entra, si no solo al
 // costado del título.
@@ -200,16 +222,9 @@ function medirTexto(el) {
   return r.getBoundingClientRect();
 }
 
-function filaPara(ancho) {
-  if (ancho >= 640) return FILA_6;
-  if (ancho >= 300) return FILA_5;
-  return FILA_3;
-}
-
 function calcularZona(hero, contenedor) {
   if (window.matchMedia(MEDIA_TIRA).matches) {
-    const w = contenedor.clientWidth;
-    return { tira: true, width: w, height: contenedor.clientHeight, fila: filaPara(w) };
+    return { tira: true, width: contenedor.clientWidth, height: contenedor.clientHeight };
   }
 
   const hr = hero.getBoundingClientRect();
@@ -229,14 +244,13 @@ function calcularZona(hero, contenedor) {
   if (derecha - izqAncha >= 260) {
     const arriba = (tag || h1).getBoundingClientRect().top - hr.top;
     const abajo = (acciones || sub || h1).getBoundingClientRect().bottom - hr.top;
-    const ancho = derecha - izqAncha;
-    return { left: izqAncha, top: arriba, width: ancho, height: abajo - arriba, fila: filaPara(ancho) };
+    return { left: izqAncha, top: arriba, width: derecha - izqAncha, height: abajo - arriba };
   }
 
   const h1r = h1.getBoundingClientRect();
   const izqAngosta = derTitulo - hr.left + 12;
-  if (derecha - izqAngosta < 110) return null;
-  return { left: izqAngosta, top: h1r.top - hr.top - 8, width: derecha - izqAngosta, height: h1r.height + 16, fila: FILA_3 };
+  if (derecha - izqAngosta < 140) return null;
+  return { left: izqAngosta, top: h1r.top - hr.top - 8, width: derecha - izqAngosta, height: h1r.height + 40 };
 }
 
 // ---------- Escena ----------
@@ -268,20 +282,26 @@ async function iniciar() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.NeutralToneMapping;
 
-  const claves = FILA_6.filter((c) => perfiles[c]);
+  const secciones = SECCIONES.filter((s) => perfiles[s.clave]);
   const cargador = new THREE.TextureLoader();
   let texturas;
   try {
-    texturas = await Promise.all(claves.map((c) => cargador.loadAsync(`botellas/${c}.webp`)));
+    texturas = await Promise.all(secciones.map((s) => cargador.loadAsync(`botellas/${s.clave}.webp`)));
   } catch (err) {
     console.warn('No se pudieron cargar las fotos de las botellas:', err);
     return contenedor.remove();
   }
   texturas.forEach((tx) => {
     tx.colorSpace = THREE.SRGBColorSpace;
-    tx.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    tx.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
   });
-  contenedor.appendChild(renderer.domElement);
+
+  const lienzo = renderer.domElement;
+  contenedor.appendChild(lienzo);
+  // Nombre de la sección que está al frente: es un link de verdad.
+  const nombre = document.createElement('a');
+  nombre.className = 'hero-botellas-nombre';
+  contenedor.appendChild(nombre);
 
   const escena = new THREE.Scene();
   escena.environment = crearEntorno(THREE, renderer);
@@ -289,29 +309,79 @@ async function iniciar() {
   luz.position.set(-3, 5, 6);
   escena.add(luz);
 
-  const camara = new THREE.PerspectiveCamera(26, 1, 0.1, 100);
-  const fila = new THREE.Group();
-  escena.add(fila);
+  const camara = new THREE.PerspectiveCamera(26, 1, 0.1, 200);
+  const rueda = new THREE.Group();
+  escena.add(rueda);
 
+  // Arma la ronda: cada botella ocupa en la circunferencia lo que mide
+  // de ancho, mirando hacia afuera.
   const texSombra = texturaSombra(THREE);
-  const botellas = claves.map((clave, i) => {
-    const b = crearBotella(THREE, clave, perfiles[clave], texturas[i]);
-    b.sombra = new THREE.Mesh(
-      new THREE.PlaneGeometry(b.radio * 3.4, b.radio * 3.4),
-      new THREE.MeshBasicMaterial({ map: texSombra, transparent: true, depthWrite: false, opacity: 0 })
-    );
-    b.sombra.rotation.x = -Math.PI / 2;
-    b.sombra.position.y = 0.005;
-    b.sombra.renderOrder = -1;
-    fila.add(b.raiz, b.sombra);
-    return b;
+  const botellas = secciones.map((s, i) => crearBotella(THREE, s, perfiles[s.clave], texturas[i], texSombra));
+  const perimetro = botellas.reduce((t, b) => t + b.radio * 2 + HUECO, 0);
+  const R = perimetro / (2 * Math.PI);
+  let recorrido = 0;
+  botellas.forEach((b) => {
+    recorrido += b.radio + HUECO / 2;
+    b.angulo = (recorrido / perimetro) * Math.PI * 2;
+    recorrido += b.radio + HUECO / 2;
+    b.raiz.position.set(R * Math.sin(b.angulo), 0, R * Math.cos(b.angulo));
+    b.raiz.rotation.y = b.angulo;
+    b.sombra.position.set(b.raiz.position.x, 0.005, b.raiz.position.z);
+    rueda.add(b.raiz, b.sombra);
   });
   const porClave = Object.fromEntries(botellas.map((b) => [b.clave, b]));
+  const radioMax = Math.max(...botellas.map((b) => b.radio));
+  const altoMax = Math.max(...botellas.map((b) => b.alto));
 
-  // Acomoda la fila visible y encuadra la cámara.
-  let filaActual = null;
-  let anchoFila = 0;
-  let altoFila = 0;
+  // Estado del giro: la ronda arranca con la primera botella al frente.
+  const estado = { angulo: -botellas[0].angulo, vel: 0, arrastrando: false };
+
+  // Encuadre: aleja la cámara hasta que la ronda entra completa y la
+  // centra, dejando lugar abajo para el nombre.
+  const ancla = new THREE.Vector3();
+  const puntosCaja = [];
+  for (let k = 0; k < 24; k++) {
+    const a = (k / 24) * Math.PI * 2;
+    for (const y of [0, altoMax]) puntosCaja.push(new THREE.Vector3((R + radioMax) * Math.sin(a), y, (R + radioMax) * Math.cos(a)));
+  }
+  const tmp = new THREE.Vector3();
+  function medir() {
+    camara.updateMatrixWorld();
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const p of puntosCaja) {
+      tmp.copy(p).project(camara);
+      x0 = Math.min(x0, tmp.x); x1 = Math.max(x1, tmp.x);
+      y0 = Math.min(y0, tmp.y); y1 = Math.max(y1, tmp.y);
+    }
+    return { x0, x1, y0, y1 };
+  }
+  function ubicarCamara(dist) {
+    camara.position.set(0, ancla.y + dist * Math.sin(ELEVACION), dist * Math.cos(ELEVACION));
+    camara.lookAt(ancla);
+  }
+  function encuadrar(ancho, alto) {
+    camara.aspect = ancho / alto;
+    camara.updateProjectionMatrix();
+    const reservaNombre = Math.min(0.3, (2 * 30) / alto); // ~30 px para el nombre
+    const yMin = -1 + reservaNombre;
+    const yMax = 0.97;
+    ancla.set(0, altoMax * 0.45, 0);
+    let dist = 4;
+    for (; dist < 120; dist *= 1.04) {
+      ubicarCamara(dist);
+      const m = medir();
+      if (m.x1 - m.x0 <= 1.94 && m.y1 - m.y0 <= yMax - yMin) break;
+    }
+    // Corre el punto de mira para centrar la ronda en el espacio libre.
+    for (let k = 0; k < 3; k++) {
+      const m = medir();
+      const desvio = (m.y0 + m.y1) / 2 - (yMin + yMax) / 2;
+      const altoVisible = 2 * dist * Math.tan(THREE.MathUtils.degToRad(camara.fov / 2));
+      ancla.y += (desvio * altoVisible) / 2;
+      ubicarCamara(dist);
+    }
+  }
+
   function acomodar() {
     contenedor.style.display = '';
     const z = calcularZona(hero, contenedor);
@@ -322,145 +392,182 @@ async function iniciar() {
     const px = (v) => (z.tira ? '' : `${v}px`);
     Object.assign(contenedor.style, { left: px(z.left), top: px(z.top), width: px(z.width), height: px(z.height) });
     renderer.setSize(z.width, z.height, false);
-
-    if (filaActual !== z.fila) {
-      filaActual = z.fila;
-      const visibles = z.fila.map((c) => porClave[c]).filter(Boolean);
-      botellas.forEach((b) => (b.raiz.visible = b.sombra.visible = visibles.includes(b)));
-      // Una al lado de la otra según su ancho real, centradas; la del
-      // medio un poco más adelante.
-      anchoFila = visibles.reduce((s, b) => s + b.radio * 2, 0) + SEPARACION * (visibles.length - 1);
-      altoFila = Math.max(...visibles.map((b) => b.alto));
-      let x = -anchoFila / 2;
-      visibles.forEach((b, i) => {
-        x += b.radio;
-        const zPos = 0.3 - Math.abs(i - (visibles.length - 1) / 2) * 0.22;
-        b.raiz.position.x = b.sombra.position.x = x;
-        b.raiz.position.z = b.sombra.position.z = zPos;
-        x += b.radio + SEPARACION;
-      });
-    }
-
-    // Encuadre: que entren todas a lo ancho y a lo alto.
-    const aspecto = z.width / z.height;
-    const tan = Math.tan(THREE.MathUtils.degToRad(camara.fov / 2));
-    const dist = Math.max((altoFila + 0.4) / (2 * tan), (anchoFila + 0.5) / (2 * tan * aspecto)) + 0.6;
-    camara.aspect = aspecto;
-    camara.position.set(0, altoFila * 0.6, dist);
-    camara.lookAt(0, altoFila * 0.47, 0);
-    camara.updateProjectionMatrix();
+    encuadrar(z.width, z.height);
     dibujar();
   }
 
+  // Muestra el nombre de la botella del frente (o la que tiene el mouse).
+  let enHover = null;
+  let alFrente = null;
+  function mostrarNombre(b) {
+    if (b === alFrente) return;
+    alFrente = b;
+    nombre.href = b.pagina;
+    nombre.textContent = b.nombre;
+    nombre.setAttribute('aria-label', `Ver ${b.nombre}`);
+    gsap.fromTo(nombre, { autoAlpha: 0.2, y: 4 }, { autoAlpha: 1, y: 0, duration: 0.3, ease: 'power2.out', overwrite: true });
+  }
+
   function dibujar() {
+    rueda.rotation.y = estado.angulo;
     botellas.forEach((b) => {
-      const a = b.angulo + b.extra;
-      b.giro.rotation.y = a;
-      // La mitad que mira a la cámara se dibuja última, así el vidrio
-      // transparente deja ver la de atrás.
-      const frenteAdelante =
-        Math.sin(a) * (camara.position.x - b.raiz.position.x) + Math.cos(a) * (camara.position.z - b.raiz.position.z) >= 0;
-      b.frente.renderOrder = frenteAdelante ? 2 : 1;
-      b.dorso.renderOrder = frenteAdelante ? 1 : 2;
+      const a = b.angulo + estado.angulo;
+      b.xw = R * Math.sin(a);
+      b.zw = R * Math.cos(a);
+      b.giro.rotation.y = b.extra;
+      // Las de atrás, más apagadas y un poco transparentes, para que
+      // manden las de adelante.
+      const cerca = (b.zw / R + 1) / 2;
+      const brillo = 0.4 + 0.6 * cerca;
+      b.material.color.setScalar(brillo);
+      b.material.emissiveIntensity = 0.62 * brillo;
+      b.material.opacity = 0.3 + 0.7 * Math.min(1, cerca * 1.4);
+      b.reflejo.material.opacity = 0.3 * cerca;
     });
+    // Orden de dibujo de atrás hacia adelante; en cada botella, la
+    // mitad que mira a la cámara va última para que el vidrio
+    // transparente deje ver lo que hay detrás.
+    const orden = [...botellas].sort((p, q) => p.zw - q.zw);
+    orden.forEach((b, k) => {
+      const a = b.angulo + estado.angulo + b.extra;
+      const frenteAdelante = Math.sin(a) * (camara.position.x - b.xw) + Math.cos(a) * (camara.position.z - b.zw) >= 0;
+      b.frente.renderOrder = k * 4 + (frenteAdelante ? 2 : 1);
+      b.dorso.renderOrder = k * 4 + (frenteAdelante ? 1 : 2);
+      b.tapa.renderOrder = k * 4 + 2;
+      b.reflejo.renderOrder = k * 4 + 3;
+    });
+    mostrarNombre(enHover || orden[orden.length - 1]);
     renderer.render(escena, camara);
   }
 
-  // Mouse: hover acelera el giro y agranda; click lleva a la categoría.
+  // ---------- Mouse y dedo ----------
   const raycaster = new THREE.Raycaster();
   const puntero = new THREE.Vector2();
-  let enHover = null;
-  const lienzo = renderer.domElement;
   function botellaBajo(ev) {
     const r = lienzo.getBoundingClientRect();
     puntero.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
     raycaster.setFromCamera(puntero, camara);
-    const zonas = botellas.filter((b) => b.raiz.visible).map((b) => b.zona);
-    const hit = raycaster.intersectObjects(zonas, false)[0];
+    const hit = raycaster.intersectObjects(botellas.map((b) => b.zona), false)[0];
     return hit ? porClave[hit.object.userData.clave] : null;
   }
 
+  function marcarHover(b) {
+    if (b === enHover) return;
+    if (enHover) gsap.to(enHover.giro.scale, { x: 1, y: 1, z: 1, duration: 0.4, ease: 'power2.out', overwrite: 'auto' });
+    enHover = b;
+    lienzo.style.cursor = b ? 'pointer' : estado.arrastrando ? 'grabbing' : 'grab';
+    if (b) {
+      gsap.to(b.giro.scale, { x: 1.1, y: 1.1, z: 1.1, duration: 0.4, ease: 'back.out(2)', overwrite: 'auto' });
+      // Una vuelta entera sobre sí misma para saludar.
+      gsap.to(b, { extra: '+=' + Math.PI * 2, duration: 1.1, ease: 'power2.inOut', overwrite: 'auto' });
+    }
+  }
+
+  let arrastre = null;
+  lienzo.style.cursor = 'grab';
+  lienzo.addEventListener('pointerdown', (ev) => {
+    arrastre = { x: ev.clientX, angulo: estado.angulo, t: performance.now(), movio: false, ultimoX: ev.clientX, ultimoT: performance.now(), vel: 0 };
+    lienzo.setPointerCapture(ev.pointerId);
+  });
+  lienzo.addEventListener('pointermove', (ev) => {
+    if (arrastre) {
+      const dx = ev.clientX - arrastre.x;
+      if (Math.abs(dx) > 6) arrastre.movio = true;
+      if (arrastre.movio) {
+        estado.arrastrando = true;
+        const porPixel = (Math.PI * 1.6) / lienzo.clientWidth;
+        estado.angulo = arrastre.angulo + dx * porPixel;
+        const ahora = performance.now();
+        const dt = Math.max(ahora - arrastre.ultimoT, 1);
+        arrastre.vel = ((ev.clientX - arrastre.ultimoX) * porPixel * 1000) / dt;
+        arrastre.ultimoX = ev.clientX;
+        arrastre.ultimoT = ahora;
+        marcarHover(null);
+        dibujar();
+      }
+      return;
+    }
+    if (ev.pointerType === 'mouse') marcarHover(botellaBajo(ev));
+  });
+  const soltar = (ev) => {
+    if (!arrastre) return;
+    const { movio, vel } = arrastre;
+    arrastre = null;
+    estado.arrastrando = false;
+    if (!movio) {
+      const b = botellaBajo(ev);
+      if (b) window.location.href = b.pagina;
+      return;
+    }
+    // Sigue girando con el impulso del arrastre y vuelve de a poco
+    // a su velocidad normal.
+    estado.vel = Math.max(-6, Math.min(6, vel));
+    gsap.to(estado, { vel: reducirMovimiento ? 0 : VEL_RUEDA, duration: 1.6, ease: 'power2.out', overwrite: 'auto' });
+  };
+  lienzo.addEventListener('pointerup', soltar);
+  lienzo.addEventListener('pointercancel', () => {
+    arrastre = null;
+    estado.arrastrando = false;
+  });
+  lienzo.addEventListener('pointerleave', (ev) => {
+    if (ev.pointerType === 'mouse') marcarHover(null);
+  });
+
+  // Mientras el mouse está sobre una botella, la ronda frena para
+  // poder tocarla tranquilo.
+  function velocidadObjetivo() {
+    if (reducirMovimiento) return 0;
+    return enHover ? 0 : VEL_RUEDA;
+  }
+
+  // ---------- Animación ----------
+  let reducirMovimiento = false;
+  let t = 0;
+  const tick = (_time, deltaMs) => {
+    const dt = Math.min(deltaMs, 50) / 1000;
+    t += dt;
+    if (!estado.arrastrando) {
+      // Acerca la velocidad a la que corresponde (frena con hover).
+      const objetivo = velocidadObjetivo();
+      if (!gsap.isTweening(estado)) estado.vel += (objetivo - estado.vel) * Math.min(1, dt * 3);
+      estado.angulo += estado.vel * dt;
+    }
+    dibujar();
+  };
+
+  let activo = false;
+  const prender = (si) => {
+    if (si === activo) return;
+    activo = si;
+    if (si) gsap.ticker.add(tick);
+    else gsap.ticker.remove(tick);
+  };
+  new IntersectionObserver(([en]) => prender(en.isIntersecting)).observe(hero);
+
   const mm = gsap.matchMedia();
   mm.add({ reducir: '(prefers-reduced-motion: reduce)', normal: '(prefers-reduced-motion: no-preference)' }, (ctx) => {
-    const { reducir } = ctx.conditions;
+    reducirMovimiento = ctx.conditions.reducir;
     acomodar();
 
-    if (reducir) {
-      // Sin movimiento: quedan quietas de frente.
-      botellas.forEach((b) => {
-        b.angulo = 0;
-        b.extra = 0;
-        b.vel = 0;
-        b.sombra.material.opacity = 1;
-      });
+    if (reducirMovimiento) {
+      // Sin movimiento automático: queda quieta; se puede girar a mano.
+      estado.vel = 0;
+      botellas.forEach((b) => (b.sombra.material.opacity = 1));
       gsap.set(contenedor, { autoAlpha: 1 });
       dibujar();
       return;
     }
 
-    botellas.forEach((b, i) => {
-      b.angulo = 0;
-      b.vel = 0.4 + (i % 3) * 0.05;
-    });
-
-    // Entrada: suben desde abajo, de a una, frenando el giro al llegar.
+    // Entrada: las botellas suben de a una mientras la ronda da un
+    // cuarto de vuelta y frena en su velocidad normal.
+    const inicio = estado.angulo;
+    estado.vel = 0;
     const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
     tl.to(contenedor, { autoAlpha: 1, duration: 0.4 })
-      .fromTo(botellas.map((b) => b.raiz.position), { y: -4.5 }, { y: 0, duration: 1.3, stagger: 0.1 }, 0)
-      .fromTo(botellas, { extra: -Math.PI * 1.5 }, { extra: 0, duration: 1.6, stagger: 0.1 }, 0)
-      .fromTo(botellas.map((b) => b.sombra.material), { opacity: 0 }, { opacity: 1, duration: 0.8, stagger: 0.1 }, 0.5);
-
-    let t = 0;
-    const tick = (_time, deltaMs) => {
-      const dt = Math.min(deltaMs, 50) / 1000;
-      t += dt;
-      botellas.forEach((b) => {
-        b.angulo += b.vel * dt;
-        b.giro.position.y = Math.sin(t * 1.3 + b.fase) * 0.045;
-      });
-      dibujar();
-    };
-
-    // Solo dibuja mientras la portada está a la vista.
-    let activo = false;
-    const prender = (si) => {
-      if (si === activo) return;
-      activo = si;
-      if (si) gsap.ticker.add(tick);
-      else gsap.ticker.remove(tick);
-    };
-    const io = new IntersectionObserver(([en]) => prender(en.isIntersecting));
-    io.observe(hero);
-
-    const alMover = (ev) => {
-      const b = botellaBajo(ev);
-      if (b === enHover) return;
-      if (enHover) {
-        gsap.to(enHover, { vel: 0.42, duration: 0.8, overwrite: 'auto' });
-        gsap.to(enHover.giro.scale, { x: 1, y: 1, z: 1, duration: 0.5, ease: 'power2.out', overwrite: 'auto' });
-      }
-      enHover = b;
-      lienzo.style.cursor = b ? 'pointer' : '';
-      if (b) {
-        gsap.to(b, { vel: 2.4, duration: 0.5, overwrite: 'auto' });
-        gsap.to(b.giro.scale, { x: 1.07, y: 1.07, z: 1.07, duration: 0.45, ease: 'back.out(2)', overwrite: 'auto' });
-      }
-    };
-    const alSalir = () => alMover({ clientX: -9999, clientY: -9999 });
-    lienzo.addEventListener('pointermove', alMover);
-    lienzo.addEventListener('pointerleave', alSalir);
-
-    return () => {
-      io.disconnect();
-      prender(false);
-      lienzo.removeEventListener('pointermove', alMover);
-      lienzo.removeEventListener('pointerleave', alSalir);
-    };
-  });
-
-  lienzo.addEventListener('click', (ev) => {
-    const b = botellaBajo(ev);
-    if (b) window.location.href = b.pagina;
+      .fromTo(estado, { angulo: inicio - Math.PI / 2 }, { angulo: inicio, duration: 2, ease: 'power2.out' }, 0)
+      .fromTo(botellas.map((b) => b.raiz.position), { y: -5 }, { y: 0, duration: 1.2, stagger: 0.06 }, 0)
+      .fromTo(botellas.map((b) => b.sombra.material), { opacity: 0 }, { opacity: 1, duration: 0.8, stagger: 0.06 }, 0.4)
+      .to(estado, { vel: VEL_RUEDA, duration: 1, ease: 'power1.in' }, 2);
   });
 
   // Reacomoda si cambia el tamaño de la portada (girar el celular,

@@ -395,13 +395,33 @@ h1 .under {
   display: block;
   width: 100%;
   height: 100%;
+  touch-action: pan-y; /* arrastrar de costado gira la ronda; de arriba abajo sigue el scroll */
+}
+.hero-botellas-nombre {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2px;
+  width: max-content;
+  margin: 0 auto;
+  font-family: 'Anton', sans-serif;
+  font-size: 1.15rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--sky);
+  text-decoration: none;
+}
+.hero-botellas-nombre:hover,
+.hero-botellas-nombre:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 @media (max-width: 640px) {
   .hero-botellas {
     position: relative;
     order: 1;
     align-self: stretch;
-    height: 150px;
+    height: 210px;
     margin-top: 1.25rem;
   }
 }
