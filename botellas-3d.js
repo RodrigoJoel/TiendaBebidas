@@ -17,7 +17,8 @@ const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.186.1/+esm';
 const GSAP_URL = 'https://cdn.jsdelivr.net/npm/gsap@3.15.0/+esm';
 
 // En el mismo orden que el menú de categorías. "alto" es el tamaño
-// relativo real (las fotos vienen todas del mismo alto).
+// relativo real (las fotos vienen todas del mismo alto). Combos arma
+// un conjunto: una botella en el medio y una lata a cada lado.
 const SECCIONES = [
   { clave: 'whisky', nombre: 'Whisky', pagina: 'whisky.html', alto: 0.86 },
   { clave: 'ron', nombre: 'Ron', pagina: 'ron.html', alto: 0.9 },
@@ -30,8 +31,11 @@ const SECCIONES = [
   { clave: 'cerveza', nombre: 'Cerveza', pagina: 'cerveza.html', alto: 0.7 },
   { clave: 'vino', nombre: 'Vino', pagina: 'vino.html', alto: 0.95 },
   { clave: 'energizante', nombre: 'Energizante', pagina: 'energizante.html', alto: 0.5 },
-  { clave: 'combos', nombre: 'Combos', pagina: 'combos.html', alto: 0.78 },
+  { clave: 'combos', nombre: 'Combos', pagina: 'combos.html', alto: 1, combo: { centro: 'greygoose', costados: 'monster', altoCostados: 0.52 } },
 ];
+
+// Fotos que usa cada sección (en /botellas/).
+const fotosDe = (s) => (s.combo ? [s.combo.centro, s.combo.costados] : [s.clave]);
 const ALTO_BASE = 3.2; // alto en unidades 3D de una botella de alto 1
 const HUECO = 0.55; // espacio entre botellas en la ronda
 const VEL_RUEDA = 0.22; // radianes por segundo (una vuelta cada ~28 s)
@@ -117,13 +121,11 @@ function geometriaTapa(THREE, perfil, alto) {
   return g;
 }
 
-function crearBotella(THREE, seccion, datos, textura, texSombra) {
-  const alto = ALTO_BASE * seccion.alto;
+// Una pieza (botella o lata): la foto envuelta sobre su silueta, con
+// su capa de reflejos.
+function crearPieza(THREE, datos, textura, alto) {
   const perfil = remuestrear(datos.perfil, PUNTOS_PERFIL);
-
-  const raiz = new THREE.Group(); // lugar en la ronda y entrada
-  const giro = new THREE.Group(); // giro propio y hover
-  raiz.add(giro);
+  const grupo = new THREE.Group();
 
   // La foto ya trae su luz; el brillo propio la mantiene fiel y la
   // luz del entorno le suma volumen al girar.
@@ -143,7 +145,7 @@ function crearBotella(THREE, seccion, datos, textura, texSombra) {
   const dorso = new THREE.Mesh(geo, material);
   dorso.rotation.y = Math.PI;
   const tapa = new THREE.Mesh(geometriaTapa(THREE, perfil, alto), material);
-  giro.add(frente, dorso, tapa);
+  grupo.add(frente, dorso, tapa);
 
   // Capa de reflejos: suma las líneas de luz del estudio sobre el vidrio.
   const puntos = perfil.map((r, i) => new THREE.Vector2(r * alto * 1.004, (i / (perfil.length - 1)) * alto));
@@ -159,9 +161,37 @@ function crearBotella(THREE, seccion, datos, textura, texSombra) {
       depthWrite: false,
     })
   );
-  giro.add(reflejo);
+  grupo.add(reflejo);
 
-  const radio = Math.max(...perfil) * alto;
+  return { grupo, material, frente, dorso, tapa, reflejo, radio: Math.max(...perfil) * alto };
+}
+
+// Lo que representa a una sección: una botella, o en Combos la
+// botella del medio con una lata a cada lado, un poco adelantadas.
+function crearBotella(THREE, seccion, perfiles, texturas, texSombra) {
+  const alto = ALTO_BASE * seccion.alto;
+  const raiz = new THREE.Group(); // lugar en la ronda y entrada
+  const giro = new THREE.Group(); // giro propio y hover
+  raiz.add(giro);
+
+  let piezas;
+  let radio;
+  if (seccion.combo) {
+    const { centro, costados, altoCostados } = seccion.combo;
+    const principal = crearPieza(THREE, perfiles[centro], texturas[centro], alto);
+    const latas = [-1, 1].map((lado) => {
+      const lata = crearPieza(THREE, perfiles[costados], texturas[costados], ALTO_BASE * altoCostados);
+      lata.grupo.position.set(lado * (principal.radio + lata.radio + 0.04), 0, principal.radio * 0.35);
+      return lata;
+    });
+    piezas = [principal, ...latas];
+    radio = principal.radio + latas[0].radio * 2 + 0.04;
+  } else {
+    piezas = [crearPieza(THREE, perfiles[seccion.clave], texturas[seccion.clave], alto)];
+    radio = piezas[0].radio;
+  }
+  piezas.forEach((p) => giro.add(p.grupo));
+
   const zona = new THREE.Mesh(new THREE.CylinderGeometry(radio * 1.1, radio * 1.1, alto, 10), new THREE.MeshBasicMaterial({ visible: false }));
   zona.position.y = alto / 2;
   zona.userData.clave = seccion.clave;
@@ -174,7 +204,7 @@ function crearBotella(THREE, seccion, datos, textura, texSombra) {
   sombra.rotation.x = -Math.PI / 2;
   sombra.position.y = 0.005;
 
-  return { ...seccion, raiz, giro, frente, dorso, tapa, reflejo, zona, sombra, material, alto, radio, angulo: 0, extra: 0, xw: 0, zw: 0 };
+  return { ...seccion, raiz, giro, piezas, zona, sombra, alto, radio, angulo: 0, extra: 0, xw: 0, zw: 0 };
 }
 
 // Sombra suave debajo de cada botella.
@@ -287,16 +317,18 @@ async function iniciar() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.NeutralToneMapping;
 
-  const secciones = SECCIONES.filter((s) => perfiles[s.clave]);
+  const secciones = SECCIONES.filter((s) => fotosDe(s).every((f) => perfiles[f]));
+  const fotos = [...new Set(secciones.flatMap(fotosDe))];
   const cargador = new THREE.TextureLoader();
-  let texturas;
+  const texturas = {};
   try {
-    texturas = await Promise.all(secciones.map((s) => cargador.loadAsync(`botellas/${s.clave}.webp`)));
+    const cargadas = await Promise.all(fotos.map((f) => cargador.loadAsync(`botellas/${f}.webp`)));
+    fotos.forEach((f, i) => (texturas[f] = cargadas[i]));
   } catch (err) {
     console.warn('No se pudieron cargar las fotos de las botellas:', err);
     return contenedor.remove();
   }
-  texturas.forEach((tx) => {
+  Object.values(texturas).forEach((tx) => {
     tx.colorSpace = THREE.SRGBColorSpace;
     tx.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
   });
@@ -321,7 +353,7 @@ async function iniciar() {
   // Arma la ronda: cada botella ocupa en la circunferencia lo que mide
   // de ancho, mirando hacia afuera.
   const texSombra = texturaSombra(THREE);
-  const botellas = secciones.map((s, i) => crearBotella(THREE, s, perfiles[s.clave], texturas[i], texSombra));
+  const botellas = secciones.map((s) => crearBotella(THREE, s, perfiles, texturas, texSombra));
   const porClave = Object.fromEntries(botellas.map((b) => [b.clave, b]));
   const radioMax = Math.max(...botellas.map((b) => b.radio));
   const altoMax = Math.max(...botellas.map((b) => b.alto));
@@ -467,10 +499,12 @@ async function iniciar() {
       // manden las de adelante.
       const cerca = (b.zw / R + 1) / 2;
       const brillo = 0.4 + 0.6 * cerca;
-      b.material.color.setScalar(brillo);
-      b.material.emissiveIntensity = 0.62 * brillo;
-      b.material.opacity = 0.3 + 0.7 * Math.min(1, cerca * 1.4);
-      b.reflejo.material.opacity = 0.3 * cerca;
+      b.piezas.forEach((p) => {
+        p.material.color.setScalar(brillo);
+        p.material.emissiveIntensity = 0.62 * brillo;
+        p.material.opacity = 0.3 + 0.7 * Math.min(1, cerca * 1.4);
+        p.reflejo.material.opacity = 0.3 * cerca;
+      });
     });
     // Orden de dibujo de atrás hacia adelante; en cada botella, la
     // mitad que mira a la cámara va última para que el vidrio
@@ -479,10 +513,12 @@ async function iniciar() {
     orden.forEach((b, k) => {
       const a = b.angulo + estado.angulo + b.extra;
       const frenteAdelante = Math.sin(a) * (camara.position.x - b.xw) + Math.cos(a) * (camara.position.z - b.zw) >= 0;
-      b.frente.renderOrder = k * 4 + (frenteAdelante ? 2 : 1);
-      b.dorso.renderOrder = k * 4 + (frenteAdelante ? 1 : 2);
-      b.tapa.renderOrder = k * 4 + 2;
-      b.reflejo.renderOrder = k * 4 + 3;
+      b.piezas.forEach((p) => {
+        p.frente.renderOrder = k * 4 + (frenteAdelante ? 2 : 1);
+        p.dorso.renderOrder = k * 4 + (frenteAdelante ? 1 : 2);
+        p.tapa.renderOrder = k * 4 + 2;
+        p.reflejo.renderOrder = k * 4 + 3;
+      });
     });
     mostrarNombre(GRILLA ? enHover : enHover || orden[orden.length - 1]);
     renderer.render(escena, camara);
