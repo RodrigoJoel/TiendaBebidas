@@ -960,3 +960,28 @@ html[data-theme="light"] .nav-emblem {
   .footer-brand .nav-logo { font-size: 1.6rem; }
   .footer-brand .nav-emblem { width: 60px; height: 60px; }
 }
+
+/* ───── BOTELLA 3D AL LADO DEL TÍTULO (botella-categoria.js) ─────
+   Se ubica sola a la derecha del texto y aparece cuando carga. En el
+   celular el encabezado deja una columna libre a la derecha para ella. */
+.hero-botella {
+  position: absolute;
+  z-index: 0;
+  opacity: 0;
+  visibility: hidden;
+}
+.hero-botella canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.hero h1,
+.hero .hero-sub {
+  position: relative;
+  z-index: 1;
+}
+@media (max-width: 640px) {
+  .hero {
+    padding-right: calc(1.25rem + 84px);
+  }
+}
