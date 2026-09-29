@@ -16,7 +16,7 @@ export const GSAP_URL = 'https://cdn.jsdelivr.net/npm/gsap@3.15.0/+esm';
 // relativo real (las fotos vienen todas del mismo alto). Combos arma
 // un conjunto: una botella en el medio y una lata a cada lado.
 export const SECCIONES = [
-  { clave: 'whisky', nombre: 'Whisky', pagina: 'whisky.html', alto: 0.86 },
+  { clave: 'whisky', nombre: 'Whisky', pagina: 'whisky.html', alto: 0.9 },
   { clave: 'ron', nombre: 'Ron', pagina: 'ron.html', alto: 0.9 },
   { clave: 'vodka', nombre: 'Vodka', pagina: 'vodka.html', alto: 1 },
   { clave: 'tequila', nombre: 'Tequila', pagina: 'tequila.html', alto: 1.02 },

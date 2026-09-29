@@ -37,7 +37,7 @@ function calcularZona(hero, relacion) {
   const abajo = hr.height - 6;
   const alto = abajo - arriba;
   const ancho = Math.min(disponible, alto * relacion);
-  if (ancho < 60) return null;
+  if (ancho < 40) return null;
   return { left: izq, top: arriba, width: ancho, height: alto };
 }
 
