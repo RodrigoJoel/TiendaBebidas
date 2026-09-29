@@ -417,6 +417,12 @@ h1 .under {
   text-underline-offset: 4px;
 }
 @media (max-width: 640px) {
+  /* En el celular manda la ronda: sin botones (la ronda y la barra de
+     categorías ya llevan a cada sección) y con el texto corto. */
+  .hero-actions,
+  .hero-sub-extra {
+    display: none;
+  }
   .hero-botellas {
     position: relative;
     order: 1;
