@@ -37,6 +37,11 @@ const HUECO = 0.55; // espacio entre botellas en la ronda
 const VEL_RUEDA = 0.22; // radianes por segundo (una vuelta cada ~28 s)
 const ELEVACION = 0.3; // la cámara mira la ronda un poco desde arriba
 const PUNTOS_PERFIL = 64;
+const ESCALA_FRENTE = 0.22; // la botella del frente se ve un 22% más grande
+// Versión alternativa guardada (apagada): dos filas de seis botellas,
+// cada una girando sobre su eje, en vez de la ronda. Para usarla,
+// cambiar a true.
+const GRILLA = false;
 
 // ---------- Carga diferida ----------
 function cuandoEsteLibre(fn) {
@@ -317,33 +322,62 @@ async function iniciar() {
   // de ancho, mirando hacia afuera.
   const texSombra = texturaSombra(THREE);
   const botellas = secciones.map((s, i) => crearBotella(THREE, s, perfiles[s.clave], texturas[i], texSombra));
-  const perimetro = botellas.reduce((t, b) => t + b.radio * 2 + HUECO, 0);
-  const R = perimetro / (2 * Math.PI);
-  let recorrido = 0;
-  botellas.forEach((b) => {
-    recorrido += b.radio + HUECO / 2;
-    b.angulo = (recorrido / perimetro) * Math.PI * 2;
-    recorrido += b.radio + HUECO / 2;
-    b.raiz.position.set(R * Math.sin(b.angulo), 0, R * Math.cos(b.angulo));
-    b.raiz.rotation.y = b.angulo;
-    b.sombra.position.set(b.raiz.position.x, 0.005, b.raiz.position.z);
-    rueda.add(b.raiz, b.sombra);
-  });
   const porClave = Object.fromEntries(botellas.map((b) => [b.clave, b]));
   const radioMax = Math.max(...botellas.map((b) => b.radio));
   const altoMax = Math.max(...botellas.map((b) => b.alto));
+  const puntosCaja = [];
+  let R = 0;
+  let altoTotal = altoMax;
+
+  if (GRILLA) {
+    // Dos filas de seis; cada botella gira sobre su eje a su ritmo.
+    const col = radioMax * 2 + 0.35;
+    const fila = altoMax + 0.55;
+    botellas.forEach((b, i) => {
+      const x = ((i % 6) - 2.5) * col;
+      b.baseY = i < 6 ? fila : 0;
+      b.raiz.position.set(x, b.baseY, 0);
+      b.sombra.position.set(x, b.baseY + 0.005, 0);
+      b.velBase = 0.5 + (i % 4) * 0.06;
+      b.vel = b.velBase;
+      b.extra = i * 0.7;
+      rueda.add(b.raiz, b.sombra);
+    });
+    altoTotal = fila + altoMax;
+    for (const x of [-3 * col, 3 * col]) for (const y of [0, altoTotal]) for (const z of [-radioMax, radioMax]) puntosCaja.push(new THREE.Vector3(x, y, z));
+  } else {
+    // Arma la ronda: cada botella ocupa en la circunferencia lo que mide
+    // de ancho, mirando hacia afuera.
+    const perimetro = botellas.reduce((t, b) => t + b.radio * 2 + HUECO, 0);
+    R = perimetro / (2 * Math.PI);
+    let recorrido = 0;
+    botellas.forEach((b) => {
+      recorrido += b.radio + HUECO / 2;
+      b.angulo = (recorrido / perimetro) * Math.PI * 2;
+      recorrido += b.radio + HUECO / 2;
+      b.baseY = 0;
+      b.raiz.position.set(R * Math.sin(b.angulo), 0, R * Math.cos(b.angulo));
+      b.raiz.rotation.y = b.angulo;
+      b.sombra.position.set(b.raiz.position.x, 0.005, b.raiz.position.z);
+      rueda.add(b.raiz, b.sombra);
+    });
+    for (let k = 0; k < 24; k++) {
+      const a = (k / 24) * Math.PI * 2;
+      for (const y of [0, altoMax]) puntosCaja.push(new THREE.Vector3((R + radioMax) * Math.sin(a), y, (R + radioMax) * Math.cos(a)));
+    }
+    // La del frente, agrandada, también tiene que entrar.
+    const grande = 1 + ESCALA_FRENTE;
+    for (const a of [-0.3, 0, 0.3]) {
+      for (const y of [0, altoMax * grande]) puntosCaja.push(new THREE.Vector3((R + radioMax * grande) * Math.sin(a), y, (R + radioMax * grande) * Math.cos(a)));
+    }
+  }
 
   // Estado del giro: la ronda arranca con la primera botella al frente.
-  const estado = { angulo: -botellas[0].angulo, vel: 0, arrastrando: false };
+  const estado = { angulo: GRILLA ? 0 : -botellas[0].angulo, vel: 0, arrastrando: false };
 
   // Encuadre: aleja la cámara hasta que la ronda entra completa y la
   // centra, dejando lugar abajo para el nombre.
   const ancla = new THREE.Vector3();
-  const puntosCaja = [];
-  for (let k = 0; k < 24; k++) {
-    const a = (k / 24) * Math.PI * 2;
-    for (const y of [0, altoMax]) puntosCaja.push(new THREE.Vector3((R + radioMax) * Math.sin(a), y, (R + radioMax) * Math.cos(a)));
-  }
   const tmp = new THREE.Vector3();
   function medir() {
     camara.updateMatrixWorld();
@@ -365,7 +399,7 @@ async function iniciar() {
     const reservaNombre = Math.min(0.3, (2 * 30) / alto); // ~30 px para el nombre
     const yMin = -1 + reservaNombre;
     const yMax = 0.97;
-    ancla.set(0, altoMax * 0.45, 0);
+    ancla.set(0, altoTotal * 0.45, 0);
     let dist = 4;
     for (; dist < 120; dist *= 1.04) {
       ubicarCamara(dist);
@@ -402,6 +436,10 @@ async function iniciar() {
   function mostrarNombre(b) {
     if (b === alFrente) return;
     alFrente = b;
+    if (!b) {
+      gsap.to(nombre, { autoAlpha: 0, duration: 0.2, overwrite: true });
+      return;
+    }
     nombre.href = b.pagina;
     nombre.textContent = b.nombre;
     nombre.setAttribute('aria-label', `Ver ${b.nombre}`);
@@ -411,10 +449,20 @@ async function iniciar() {
   function dibujar() {
     rueda.rotation.y = estado.angulo;
     botellas.forEach((b) => {
+      b.giro.rotation.y = b.extra;
+      if (GRILLA) {
+        b.xw = b.raiz.position.x;
+        b.zw = 0;
+        return;
+      }
       const a = b.angulo + estado.angulo;
       b.xw = R * Math.sin(a);
       b.zw = R * Math.cos(a);
-      b.giro.rotation.y = b.extra;
+      // La que pasa por el frente se agranda y vuelve a su tamaño al
+      // seguir de largo, así siempre resalta la del nombre.
+      const escala = 1 + ESCALA_FRENTE * Math.max(0, Math.cos(a)) ** 8;
+      b.raiz.scale.setScalar(escala);
+      b.sombra.scale.setScalar(escala);
       // Las de atrás, más apagadas y un poco transparentes, para que
       // manden las de adelante.
       const cerca = (b.zw / R + 1) / 2;
@@ -436,7 +484,7 @@ async function iniciar() {
       b.tapa.renderOrder = k * 4 + 2;
       b.reflejo.renderOrder = k * 4 + 3;
     });
-    mostrarNombre(enHover || orden[orden.length - 1]);
+    mostrarNombre(GRILLA ? enHover : enHover || orden[orden.length - 1]);
     renderer.render(escena, camara);
   }
 
@@ -453,18 +501,22 @@ async function iniciar() {
 
   function marcarHover(b) {
     if (b === enHover) return;
-    if (enHover) gsap.to(enHover.giro.scale, { x: 1, y: 1, z: 1, duration: 0.4, ease: 'power2.out', overwrite: 'auto' });
+    if (enHover) {
+      gsap.to(enHover.giro.scale, { x: 1, y: 1, z: 1, duration: 0.4, ease: 'power2.out', overwrite: 'auto' });
+      if (GRILLA) gsap.to(enHover, { vel: reducirMovimiento ? 0 : enHover.velBase, duration: 0.8, overwrite: 'auto' });
+    }
     enHover = b;
-    lienzo.style.cursor = b ? 'pointer' : estado.arrastrando ? 'grabbing' : 'grab';
+    lienzo.style.cursor = b ? 'pointer' : GRILLA ? '' : estado.arrastrando ? 'grabbing' : 'grab';
     if (b) {
       gsap.to(b.giro.scale, { x: 1.1, y: 1.1, z: 1.1, duration: 0.4, ease: 'back.out(2)', overwrite: 'auto' });
+      if (GRILLA) gsap.to(b, { vel: 2.4, duration: 0.5, overwrite: 'auto' });
       // Una vuelta entera sobre sí misma para saludar.
-      gsap.to(b, { extra: '+=' + Math.PI * 2, duration: 1.1, ease: 'power2.inOut', overwrite: 'auto' });
+      else gsap.to(b, { extra: '+=' + Math.PI * 2, duration: 1.1, ease: 'power2.inOut', overwrite: 'auto' });
     }
   }
 
   let arrastre = null;
-  lienzo.style.cursor = 'grab';
+  if (!GRILLA) lienzo.style.cursor = 'grab';
   lienzo.addEventListener('pointerdown', (ev) => {
     arrastre = { x: ev.clientX, angulo: estado.angulo, t: performance.now(), movio: false, ultimoX: ev.clientX, ultimoT: performance.now(), vel: 0 };
     lienzo.setPointerCapture(ev.pointerId);
@@ -473,7 +525,7 @@ async function iniciar() {
     if (arrastre) {
       const dx = ev.clientX - arrastre.x;
       if (Math.abs(dx) > 6) arrastre.movio = true;
-      if (arrastre.movio) {
+      if (arrastre.movio && !GRILLA) {
         estado.arrastrando = true;
         const porPixel = (Math.PI * 1.6) / lienzo.clientWidth;
         estado.angulo = arrastre.angulo + dx * porPixel;
@@ -499,6 +551,7 @@ async function iniciar() {
       if (b) window.location.href = b.pagina;
       return;
     }
+    if (GRILLA) return;
     // Sigue girando con el impulso del arrastre y vuelve de a poco
     // a su velocidad normal.
     estado.vel = Math.max(-6, Math.min(6, vel));
@@ -526,7 +579,8 @@ async function iniciar() {
   const tick = (_time, deltaMs) => {
     const dt = Math.min(deltaMs, 50) / 1000;
     t += dt;
-    if (!estado.arrastrando) {
+    if (GRILLA) botellas.forEach((b) => (b.extra += b.vel * dt));
+    else if (!estado.arrastrando) {
       // Acerca la velocidad a la que corresponde (frena con hover).
       const objetivo = velocidadObjetivo();
       if (!gsap.isTweening(estado)) estado.vel += (objetivo - estado.vel) * Math.min(1, dt * 3);
@@ -552,7 +606,10 @@ async function iniciar() {
     if (reducirMovimiento) {
       // Sin movimiento automático: queda quieta; se puede girar a mano.
       estado.vel = 0;
-      botellas.forEach((b) => (b.sombra.material.opacity = 1));
+      botellas.forEach((b) => {
+        b.vel = 0;
+        b.sombra.material.opacity = 1;
+      });
       gsap.set(contenedor, { autoAlpha: 1 });
       dibujar();
       return;
@@ -564,10 +621,20 @@ async function iniciar() {
     estado.vel = 0;
     const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
     tl.to(contenedor, { autoAlpha: 1, duration: 0.4 })
-      .fromTo(estado, { angulo: inicio - Math.PI / 2 }, { angulo: inicio, duration: 2, ease: 'power2.out' }, 0)
-      .fromTo(botellas.map((b) => b.raiz.position), { y: -5 }, { y: 0, duration: 1.2, stagger: 0.06 }, 0)
-      .fromTo(botellas.map((b) => b.sombra.material), { opacity: 0 }, { opacity: 1, duration: 0.8, stagger: 0.06 }, 0.4)
-      .to(estado, { vel: VEL_RUEDA, duration: 1, ease: 'power1.in' }, 2);
+      .fromTo(
+        botellas.map((b) => b.raiz.position),
+        { y: (i) => botellas[i].baseY - 5 },
+        { y: (i) => botellas[i].baseY, duration: 1.2, stagger: 0.06 },
+        0
+      )
+      .fromTo(botellas.map((b) => b.sombra.material), { opacity: 0 }, { opacity: 1, duration: 0.8, stagger: 0.06 }, 0.4);
+    if (!GRILLA) {
+      tl.fromTo(estado, { angulo: inicio - Math.PI / 2 }, { angulo: inicio, duration: 2, ease: 'power2.out' }, 0).to(
+        estado,
+        { vel: VEL_RUEDA, duration: 1, ease: 'power1.in' },
+        2
+      );
+    }
   });
 
   // Reacomoda si cambia el tamaño de la portada (girar el celular,
