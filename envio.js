@@ -66,7 +66,7 @@
     return Math.ceil((flete + seguro + EXTRA_CAJAS) / 100) * 100;
   }
 
-  const Envio = { ENTREGAS, zonaDe, cajasPara, costoEnvio };
+  const Envio = { CAJAS, ENTREGAS, zonaDe, cajasPara, costoEnvio };
   if (typeof module !== 'undefined' && module.exports) module.exports = Envio;
   else raiz.Envio = Envio;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

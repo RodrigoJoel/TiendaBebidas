@@ -614,6 +614,8 @@ function pagePedidos() {
     return normalizar([p.numero, c.nombre, c.email, c.dni, c.celular, c.ciudad].join(' ')).includes(termino);
   });
 
+  window.pedidosParaEtiquetas = lista.map(p => p.numero);
+
   const chips = VISTAS_PEDIDOS.map(v => {
     const n = v.estados ? todos.filter(p => v.estados.includes(p.estado)).length : todos.length;
     return `<button type="button" class="chip ${v.key === vista.key ? 'active' : ''}" onclick="setPedidosFiltro('vista','${v.key}')">${v.label}<span class="n">${n}</span></button>`;
@@ -632,6 +634,7 @@ function pagePedidos() {
         <div class="field">
           <input id="pedidosBusqueda" placeholder="Buscar número, nombre, email, DNI..." value="${esc(filtro.busqueda)}" oninput="setPedidosFiltro('busqueda', this.value)"/>
         </div>
+        ${vista.key === 'pagado' && lista.length > 1 ? `<button type="button" class="btn btn-ghost btn-sm" style="margin-bottom:12px" onclick="imprimirEtiquetas(window.pedidosParaEtiquetas)">🏷 Imprimir las etiquetas de estos ${lista.length} pedidos</button>` : ''}
         <div class="order-list">
           ${lista.length ? lista.map(filaPedido).join('') : `<p class="empty">${vacio}</p>`}
         </div>
@@ -776,6 +779,7 @@ function renderPedidoModal() {
           <dt>CP</dt><dd>${esc(c.cp)}</dd>
           ${c.mensaje ? `<dt>Mensaje</dt><dd>${esc(c.mensaje)}</dd>` : ''}
         </dl>
+        ${p.estado !== 'cancelado' ? `<button type="button" class="btn btn-ghost btn-sm" style="margin-top:10px" data-numero="${esc(p.numero)}" onclick="imprimirEtiquetas([this.dataset.numero])">🏷 Imprimir etiqueta</button>` : ''}
       </div>
     </div>
 
