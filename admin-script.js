@@ -784,7 +784,7 @@ function renderPedidoModal() {
       <table class="order-items">
         ${(p.items || []).map(i => `
           <tr><td>${Number(i.cantidad) || 0}× ${esc(i.nombre)}${i.tamano ? ` <span class="muted">(${esc(i.tamano)})</span>` : ''}</td><td>${fmt(i.subtotal)}</td></tr>`).join('')}
-        <tr class="sum"><td>Envío</td><td>${fmt(p.envio)}</td></tr>
+        <tr class="sum"><td>Envío${p.cliente?.entrega === 'sucursal' ? ' (retiro en sucursal)' : p.cliente?.entrega === 'domicilio' ? ' (a domicilio)' : ''}</td><td>${fmt(p.envio)}</td></tr>
         <tr class="total"><td>Total</td><td>${fmt(p.total)}</td></tr>
       </table>
     </div>

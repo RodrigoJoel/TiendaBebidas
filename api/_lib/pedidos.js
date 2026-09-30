@@ -6,9 +6,9 @@
 // ============================================================
 const crypto = require('crypto');
 const { FieldValue } = require('firebase-admin/firestore');
+// Tarifas de Andreani: el mismo archivo que usa el checkout.
+const { ENTREGAS, costoEnvio } = require('../../envio.js');
 
-// Mismo valor que muestra checkout.js.
-const COSTO_ENVIO = 20000;
 const MAX_UNIDADES_POR_PRODUCTO = 50;
 
 const PROVINCIAS = [
@@ -45,6 +45,7 @@ function validarCliente(datos = {}) {
     ciudad: texto(datos.ciudad, 80),
     provincia: texto(datos.provincia, 40),
     cp: texto(datos.cp, 10).toUpperCase(),
+    entrega: texto(datos.entrega, 10),
     mensaje: String(datos.mensaje ?? '').trim().slice(0, 500)
   };
 
@@ -74,6 +75,9 @@ function validarCliente(datos = {}) {
   if (!/^(\d{4}|[A-Z]\d{4}[A-Z]{3})$/.test(cliente.cp)) {
     throw new ErrorPedido('El código postal tiene que tener 4 números (ej: 3500) o el formato nuevo (ej: H3500ABC).');
   }
+  if (!ENTREGAS.includes(cliente.entrega)) {
+    throw new ErrorPedido('Elegí si retirás en una sucursal de Andreani o lo recibís a domicilio.');
+  }
   if (datos.mayorDeEdad !== true) {
     throw new ErrorPedido('Para comprar tenés que confirmar que sos mayor de 18 años.');
   }
@@ -88,9 +92,11 @@ function leerStock(prod) {
 
 // ============================================================
 //  DETALLE DEL PEDIDO (precios y stock desde Firestore)
-//  Con `tx` lee los productos dentro de esa transacción.
+//  El envío sale de la provincia, el CP y la forma de entrega del
+//  cliente ya validado. Con `tx` lee los productos dentro de esa
+//  transacción.
 // ============================================================
-async function armarDetalle(db, cartItems, tx = null) {
+async function armarDetalle(db, cartItems, cliente, tx = null) {
   if (!Array.isArray(cartItems) || !cartItems.length) {
     throw new ErrorPedido('El carrito está vacío.');
   }
@@ -146,7 +152,9 @@ async function armarDetalle(db, cartItems, tx = null) {
   });
 
   const subtotal = items.reduce((s, i) => s + i.subtotal, 0);
-  return { items, subtotal, envio: COSTO_ENVIO, total: subtotal + COSTO_ENVIO };
+  const botellas = items.reduce((s, i) => s + i.cantidad, 0);
+  const envio = costoEnvio({ provincia: cliente.provincia, cp: cliente.cp, entrega: cliente.entrega, botellas, subtotal });
+  return { items, subtotal, envio, total: subtotal + envio };
 }
 
 // ============================================================
@@ -214,7 +222,6 @@ function responderError(res, err, mensajeGenerico) {
 }
 
 module.exports = {
-  COSTO_ENVIO,
   ErrorPedido,
   validarCliente,
   armarDetalle,

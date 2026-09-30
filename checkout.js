@@ -6,8 +6,8 @@
 //  datos, precios y stock antes de guardarlo.
 // ============================================================
 
-// Mismo valor que usa el servidor (api/_lib/pedidos.js).
-const COSTO_ENVIO = 20000;
+// El costo del envío sale de envio.js (window.Envio), el mismo
+// archivo con el que el servidor calcula el total.
 const WHATSAPP_NUMERO = '5492995000000';
 
 const PROVINCIAS = [
@@ -45,6 +45,27 @@ function formatPrice(n) {
 
 function cartTotal() {
   return Object.values(cart).reduce((s, i) => s + Number(i.price) * i.qty, 0);
+}
+
+function cantidadBotellas() {
+  return Object.values(cart).reduce((s, i) => s + i.qty, 0);
+}
+
+function entregaElegida() {
+  return document.querySelector('input[name="fEntrega"]:checked')?.value || '';
+}
+
+// Costo del envío con los datos cargados hasta ahora, o null si falta
+// algo. `entrega` permite calcular la otra opción para mostrarla.
+function costoEnvio(entrega = entregaElegida()) {
+  const cp = document.getElementById('fCp');
+  return window.Envio.costoEnvio({
+    provincia: document.getElementById('fProvincia')?.value,
+    cp: cp?.checkValidity() ? cp.value : '',
+    entrega,
+    botellas: cantidadBotellas(),
+    subtotal: cartTotal()
+  });
 }
 
 function itemsParaEnviar() {
@@ -100,6 +121,7 @@ function leerDatosCliente() {
   Object.entries(CAMPOS).forEach(([id, campo]) => {
     datos[campo] = document.getElementById(id)?.value.trim() || '';
   });
+  datos.entrega = entregaElegida();
   datos.mayorDeEdad = document.getElementById('fMayorEdad')?.checked === true;
   return datos;
 }
@@ -129,6 +151,9 @@ function restaurarDatosCliente() {
   });
   const check = document.getElementById('fMayorEdad');
   if (check) check.checked = datos.mayorDeEdad === true;
+  const opcion = document.querySelector(`input[name="fEntrega"][value="${datos.entrega === 'domicilio' ? 'domicilio' : 'sucursal'}"]`);
+  if (opcion && datos.entrega) opcion.checked = true;
+  renderResumen();
 
   return document.getElementById('datosForm')?.checkValidity() ?? false;
 }
@@ -209,7 +234,20 @@ function poblarProvincias() {
 function renderResumen() {
   const items = Object.values(cart);
   const subtotal = cartTotal();
-  const total = subtotal + COSTO_ENVIO;
+  const envio = costoEnvio();
+  const total = subtotal + (envio || 0);
+
+  // Precio de cada opción de entrega, al lado de la opción.
+  const sucursal = costoEnvio('sucursal');
+  const domicilio = costoEnvio('domicilio');
+  document.getElementById('precioSucursal').textContent = sucursal === null ? '' : formatPrice(sucursal);
+  document.getElementById('precioDomicilio').textContent = domicilio === null ? '' : formatPrice(domicilio);
+  document.getElementById('entregaNota').textContent = sucursal === null
+    ? 'Elegí tu provincia y código postal para ver el costo. Incluye el seguro del envío.'
+    : 'El costo incluye el seguro del envío.';
+  document.getElementById('summaryShippingLabel').textContent =
+    entregaElegida() === 'sucursal' ? 'Envío (retiro en sucursal)' : entregaElegida() === 'domicilio' ? 'Envío a domicilio' : 'Envío';
+  const textoEnvio = envio === null ? 'A calcular' : formatPrice(envio);
 
   const itemsHtml = items.map(i => `
     <div class="summary-item-row">
@@ -224,11 +262,11 @@ function renderResumen() {
   if (sideItems) sideItems.innerHTML = itemsHtml;
 
   document.getElementById('summarySubtotal').textContent = formatPrice(subtotal);
-  document.getElementById('summaryShipping').textContent = formatPrice(COSTO_ENVIO);
+  document.getElementById('summaryShipping').textContent = textoEnvio;
   document.getElementById('summaryTotal').textContent = formatPrice(total);
 
   document.getElementById('sideSubtotal').textContent = formatPrice(subtotal);
-  document.getElementById('sideShipping').textContent = formatPrice(COSTO_ENVIO);
+  document.getElementById('sideShipping').textContent = textoEnvio;
   document.getElementById('sideTotal').textContent = formatPrice(total);
 }
 
@@ -471,4 +509,7 @@ window.pagarConMercadoPago = pagarConMercadoPago;
 window.confirmarTransferencia = confirmarTransferencia;
 
 poblarProvincias();
+// El envío cambia con la provincia, el código postal y la forma de entrega.
+['fProvincia', 'fCp'].forEach(id => document.getElementById(id)?.addEventListener('input', renderResumen));
+document.querySelectorAll('input[name="fEntrega"]').forEach(r => r.addEventListener('change', renderResumen));
 cargarCarrito();

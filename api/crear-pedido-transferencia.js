@@ -27,7 +27,7 @@ module.exports = async (req, res) => {
     const numero = generarNumeroPedido();
 
     const pedido = await db.runTransaction(async tx => {
-      const detalle = await armarDetalle(db, cartItems, tx);
+      const detalle = await armarDetalle(db, cartItems, cliente, tx);
       const { descontado } = await descontarStock(tx, db, detalle.items);
       const nuevo = {
         numero,

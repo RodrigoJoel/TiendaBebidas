@@ -96,6 +96,21 @@
               </div>
             </div>
 
+            <fieldset class="entrega-opciones">
+              <legend>Envío por Andreani *</legend>
+              <label class="entrega-opcion">
+                <input type="radio" name="fEntrega" value="sucursal" required />
+                <span class="entrega-texto"><strong>Retiro en sucursal</strong><small>En la sucursal de Andreani más cercana a tu código postal.</small></span>
+                <span class="entrega-precio" id="precioSucursal"></span>
+              </label>
+              <label class="entrega-opcion">
+                <input type="radio" name="fEntrega" value="domicilio" />
+                <span class="entrega-texto"><strong>A domicilio</strong><small>Te lo llevan a la dirección de arriba.</small></span>
+                <span class="entrega-precio" id="precioDomicilio"></span>
+              </label>
+              <p class="entrega-nota" id="entregaNota">Elegí tu provincia y código postal para ver el costo. Incluye el seguro del envío.</p>
+            </fieldset>
+
             <div class="form-row">
               <div class="form-group">
                 <label for="fEmail">Email *</label>
@@ -165,7 +180,7 @@
             <h3>Resumen de tu pedido</h3>
             <div id="summaryItems"></div>
             <div class="summary-row"><span>Subtotal</span><span id="summarySubtotal">$0</span></div>
-            <div class="summary-row"><span>Envío a todo el país</span><span id="summaryShipping">$0</span></div>
+            <div class="summary-row"><span id="summaryShippingLabel">Envío</span><span id="summaryShipping">$0</span></div>
             <div class="summary-row summary-total"><span>Total</span><span id="summaryTotal">$0</span></div>
           </div>
 
@@ -209,6 +224,7 @@
     </div>
   </div>
 
+  <script src="envio.js"></script>
   <script type="module" src="checkout.js"></script>
 </body>
 </html>

@@ -22,6 +22,13 @@ const DATOS_TRANSFERENCIA = [
   ['Alias', 'reservaglobal']
 ];
 
+// Forma de entrega para mostrar junto al envío. Los pedidos viejos no la tienen.
+function textoEntrega(entrega) {
+  if (entrega === 'sucursal') return ' (retiro en sucursal Andreani)';
+  if (entrega === 'domicilio') return ' (Andreani a domicilio)';
+  return '';
+}
+
 function esc(valor) {
   return String(valor ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -102,7 +109,7 @@ function tablaItems(pedido) {
     <table style="width:100%; border-collapse:collapse; margin:1rem 0;">
       ${filas}
       <tr>
-        <td style="padding:6px 0; color:#6b6252;">Envío</td>
+        <td style="padding:6px 0; color:#6b6252;">Envío${textoEntrega(pedido.cliente?.entrega)}</td>
         <td style="padding:6px 0; text-align:right; color:#6b6252;">${precio(pedido.envio)}</td>
       </tr>
       <tr style="border-top:1px solid #ddd; font-weight:bold;">

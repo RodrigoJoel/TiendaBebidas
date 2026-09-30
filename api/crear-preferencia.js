@@ -30,7 +30,7 @@ module.exports = async (req, res) => {
     const cliente = validarCliente(datosCliente);
 
     const db = getDb();
-    const detalle = await armarDetalle(db, cartItems);
+    const detalle = await armarDetalle(db, cartItems, cliente);
     const numero = generarNumeroPedido();
 
     const origin = `https://${req.headers.host}`;
@@ -46,7 +46,7 @@ module.exports = async (req, res) => {
             unit_price: i.precio,
             currency_id: 'ARS'
           })),
-          { id: 'envio', title: 'Envío', quantity: 1, unit_price: detalle.envio, currency_id: 'ARS' }
+          { id: 'envio', title: `Envío por Andreani (${cliente.entrega === 'sucursal' ? 'retiro en sucursal' : 'a domicilio'})`, quantity: 1, unit_price: detalle.envio, currency_id: 'ARS' }
         ],
         payer: {
           name: cliente.nombre,

@@ -176,6 +176,48 @@ nav {
 select.form-input { cursor: pointer; }
 textarea.form-input { resize: vertical; }
 
+/* Envío por Andreani: retiro en sucursal o a domicilio */
+.entrega-opciones {
+  border: 0;
+  padding: 0;
+  margin: 0 0 1.25rem;
+  display: grid;
+  gap: 0.6rem;
+}
+.entrega-opciones legend {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+.entrega-opcion {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.85rem 1rem;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+.entrega-opcion:has(input:checked) {
+  border-color: var(--blue);
+  background: rgba(26, 111, 191, 0.08);
+}
+.entrega-opcion input {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  accent-color: var(--blue);
+  cursor: pointer;
+}
+.entrega-texto { flex: 1; min-width: 0; }
+.entrega-texto strong { display: block; font-size: 0.92rem; }
+.entrega-texto small { display: block; font-size: 0.78rem; color: var(--muted); line-height: 1.4; }
+.entrega-precio { font-weight: 600; color: var(--precio); white-space: nowrap; }
+.entrega-nota { font-size: 0.78rem; color: var(--muted); margin: 0; }
+
 .check-legal {
   display: flex;
   align-items: flex-start;
