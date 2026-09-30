@@ -137,6 +137,18 @@ function direccionCompleta(c) {
   return `${c.direccion}${c.piso ? `, ${c.piso}` : ''} — ${c.ciudad}, ${c.provincia} (CP ${c.cp})`;
 }
 
+function sucursalTexto(s) {
+  return `${s.nombre} — ${s.direccion}, ${s.localidad} (${s.provincia})`;
+}
+
+// A dónde va el pedido, para los mails al cliente.
+function destinoEnvio(c) {
+  if (c.entrega !== 'sucursal') return `a: ${direccionCompleta(c)}`;
+  return c.sucursal
+    ? `a la sucursal de Andreani ${sucursalTexto(c.sucursal)}, para que lo retires con tu DNI`
+    : 'a la sucursal de Andreani más cercana a tu código postal (te escribimos para confirmarla)';
+}
+
 function linkWhatsapp(texto) {
   return `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(texto)}`;
 }
@@ -168,6 +180,7 @@ async function avisarNuevoPedido(pedido) {
     <h3 style="color:#0a3560; margin-bottom:0;">Entrega</h3>
     ${tablaDatos([
       ['Dirección', esc(direccionCompleta(c))],
+      ...(c.entrega === 'sucursal' ? [['Retira en', c.sucursal ? esc(sucursalTexto(c.sucursal)) : 'Sucursal a coordinar con el cliente']] : []),
       ...(c.mensaje ? [['Mensaje', esc(c.mensaje)]] : [])
     ])}
 
@@ -209,13 +222,13 @@ async function confirmarAlCliente(pedido) {
           Enviar comprobante por WhatsApp
         </a>
       </p>
-      <p>Apenas verifiquemos el pago, coordinamos el envío a: ${esc(direccionCompleta(c))}.</p>
+      <p>Apenas verifiquemos el pago, coordinamos el envío ${esc(destinoEnvio(c))}.</p>
     `
     : `
       <h2 style="color:#0a3560;">¡Gracias por tu compra, ${esc(primerNombre)}!</h2>
       <p>Tu pago fue aprobado y tu pedido <strong>${esc(pedido.numero)}</strong> quedó confirmado.</p>
       ${tablaItems(pedido)}
-      <p>Lo enviamos a: ${esc(direccionCompleta(c))}. Te avisamos cuando lo despachemos.</p>
+      <p>Lo enviamos ${esc(destinoEnvio(c))}. Te avisamos cuando lo despachemos.</p>
     `;
 
   return enviarMail({

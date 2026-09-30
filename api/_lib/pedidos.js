@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const { FieldValue } = require('firebase-admin/firestore');
 // Tarifas de Andreani: el mismo archivo que usa el checkout.
 const { ENTREGAS, costoEnvio } = require('../../envio.js');
+const { buscarSucursal } = require('./sucursales');
 
 const MAX_UNIDADES_POR_PRODUCTO = 50;
 
@@ -34,7 +35,7 @@ function texto(valor, max) {
 // ============================================================
 //  DATOS DEL CLIENTE
 // ============================================================
-function validarCliente(datos = {}) {
+async function validarCliente(datos = {}) {
   const cliente = {
     nombre: texto(datos.nombre, 60),
     dni: String(datos.dni ?? '').replace(/\D/g, ''),
@@ -82,7 +83,25 @@ function validarCliente(datos = {}) {
     throw new ErrorPedido('Para comprar tenés que confirmar que sos mayor de 18 años.');
   }
 
+  cliente.sucursal = await sucursalElegida(cliente.entrega, datos.sucursalId);
   return cliente;
+}
+
+// Retiro en sucursal: se guarda la sucursal con los datos de Andreani,
+// no con los que manda el navegador. Si el cliente no pudo elegir una
+// (no cargó la lista) o Andreani no responde, el pedido entra igual y
+// la sucursal se coordina con el cliente.
+async function sucursalElegida(entrega, sucursalId) {
+  if (entrega !== 'sucursal' || !sucursalId) return null;
+  let sucursal;
+  try {
+    sucursal = await buscarSucursal(sucursalId);
+  } catch (err) {
+    console.error('No se pudo comprobar la sucursal de Andreani:', err);
+    return null;
+  }
+  if (!sucursal) throw new ErrorPedido('La sucursal de Andreani que elegiste ya no está disponible. Elegí otra.');
+  return sucursal;
 }
 
 // Stock vacío o null = ilimitado (igual que en el sitio y el panel).

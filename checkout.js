@@ -122,6 +122,7 @@ function leerDatosCliente() {
     datos[campo] = document.getElementById(id)?.value.trim() || '';
   });
   datos.entrega = entregaElegida();
+  datos.sucursalId = datos.entrega === 'sucursal' ? sucursalElegida() : '';
   datos.mayorDeEdad = document.getElementById('fMayorEdad')?.checked === true;
   return datos;
 }
@@ -153,7 +154,9 @@ function restaurarDatosCliente() {
   if (check) check.checked = datos.mayorDeEdad === true;
   const opcion = document.querySelector(`input[name="fEntrega"][value="${datos.entrega === 'domicilio' ? 'domicilio' : 'sucursal'}"]`);
   if (opcion && datos.entrega) opcion.checked = true;
+  sucursalGuardada = datos.sucursalId || '';
   renderResumen();
+  actualizarSucursales();
 
   return document.getElementById('datosForm')?.checkValidity() ?? false;
 }
@@ -268,6 +271,93 @@ function renderResumen() {
   document.getElementById('sideSubtotal').textContent = formatPrice(subtotal);
   document.getElementById('sideShipping').textContent = textoEnvio;
   document.getElementById('sideTotal').textContent = formatPrice(total);
+}
+
+// ============================================================
+//  SUCURSALES DE ANDREANI (retiro en sucursal)
+//  Con la provincia y el código postal se piden a /api/sucursales
+//  las más cercanas y el cliente elige una. Si no cargan, puede
+//  seguir igual: la sucursal se coordina después por WhatsApp.
+// ============================================================
+const sucursalesPorCP = new Map();
+let sucursalGuardada = ''; // la elegida, aunque la lista todavía no esté dibujada
+let sucursalesMostradas = ''; // "cp|provincia" de la lista dibujada
+let consultaSucursales = 0;
+
+function escHtml(t) {
+  return String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function sucursalElegida() {
+  return document.querySelector('input[name="fSucursal"]:checked')?.value || sucursalGuardada;
+}
+
+async function actualizarSucursales() {
+  const box = document.getElementById('sucursalesBox');
+  const lista = document.getElementById('sucursalesLista');
+  if (!box || !lista) return;
+
+  const aviso = (texto) => {
+    lista.innerHTML = `<p class="sucursales-aviso">${texto}</p>`;
+    sucursalesMostradas = '';
+  };
+
+  // A domicilio: la lista se vacía para que no pida elegir sucursal.
+  box.hidden = entregaElegida() !== 'sucursal';
+  if (box.hidden) {
+    lista.innerHTML = '';
+    sucursalesMostradas = '';
+    return;
+  }
+
+  const cpInput = document.getElementById('fCp');
+  const provincia = document.getElementById('fProvincia')?.value || '';
+  if (!provincia || !cpInput?.value || !cpInput.checkValidity()) {
+    aviso('Completá la provincia y el código postal para ver las sucursales más cercanas.');
+    return;
+  }
+
+  const cp = cpInput.value.trim().toUpperCase();
+  const clave = `${cp}|${provincia}`;
+  if (clave === sucursalesMostradas) return;
+
+  const consulta = ++consultaSucursales;
+  let sucursales = sucursalesPorCP.get(clave);
+  if (!sucursales) {
+    aviso('Buscando sucursales de Andreani cerca tuyo…');
+    try {
+      const resp = await fetch(`/api/sucursales?cp=${encodeURIComponent(cp)}&provincia=${encodeURIComponent(provincia)}`);
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data.error);
+      sucursales = Array.isArray(data.sucursales) ? data.sucursales : [];
+      sucursalesPorCP.set(clave, sucursales);
+    } catch {
+      sucursales = null;
+    }
+    // Si mientras tanto cambió el código postal, esta respuesta ya no sirve.
+    if (consulta !== consultaSucursales) return;
+  }
+
+  if (!sucursales?.length) {
+    sucursalGuardada = '';
+    aviso(`${sucursales ? 'No encontramos sucursales de Andreani para ese código postal.' : 'No pudimos cargar las sucursales de Andreani.'} Podés seguir igual: te escribimos para coordinar dónde retirarlo.`);
+    return;
+  }
+
+  if (!sucursales.some(s => String(s.id) === String(sucursalGuardada))) sucursalGuardada = '';
+  lista.innerHTML = sucursales.map((s, i) => `
+    <label class="sucursal-opcion">
+      <input type="radio" name="fSucursal" value="${escHtml(s.id)}" ${i === 0 ? 'required' : ''} ${String(s.id) === String(sucursalGuardada) ? 'checked' : ''} />
+      <span>
+        <strong>${escHtml(s.nombre)}</strong>
+        <small>${escHtml(s.direccion)}, ${escHtml(s.localidad)}</small>
+        ${s.horario ? `<small>${escHtml(s.horario)}</small>` : ''}
+      </span>
+    </label>`).join('');
+  lista.querySelectorAll('input[name="fSucursal"]').forEach(r => r.addEventListener('change', () => {
+    sucursalGuardada = r.value;
+  }));
+  sucursalesMostradas = clave;
 }
 
 // ============================================================
@@ -512,4 +602,7 @@ poblarProvincias();
 // El envío cambia con la provincia, el código postal y la forma de entrega.
 ['fProvincia', 'fCp'].forEach(id => document.getElementById(id)?.addEventListener('input', renderResumen));
 document.querySelectorAll('input[name="fEntrega"]').forEach(r => r.addEventListener('change', renderResumen));
+// Y con eso mismo, las sucursales para retirar.
+['fProvincia', 'fCp'].forEach(id => document.getElementById(id)?.addEventListener('input', actualizarSucursales));
+document.querySelectorAll('input[name="fEntrega"]').forEach(r => r.addEventListener('change', actualizarSucursales));
 cargarCarrito();

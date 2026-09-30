@@ -100,7 +100,7 @@
               <legend>Envío por Andreani *</legend>
               <label class="entrega-opcion">
                 <input type="radio" name="fEntrega" value="sucursal" required />
-                <span class="entrega-texto"><strong>Retiro en sucursal</strong><small>En la sucursal de Andreani más cercana a tu código postal.</small></span>
+                <span class="entrega-texto"><strong>Retiro en sucursal</strong><small>Elegís una sucursal de Andreani cerca tuyo y lo retirás con tu DNI.</small></span>
                 <span class="entrega-precio" id="precioSucursal"></span>
               </label>
               <label class="entrega-opcion">
@@ -108,6 +108,10 @@
                 <span class="entrega-texto"><strong>A domicilio</strong><small>Te lo llevan a la dirección de arriba.</small></span>
                 <span class="entrega-precio" id="precioDomicilio"></span>
               </label>
+              <div class="sucursales" id="sucursalesBox" hidden>
+                <p class="sucursales-titulo">¿En qué sucursal lo retirás?</p>
+                <div class="sucursales-lista" id="sucursalesLista" aria-live="polite"></div>
+              </div>
               <p class="entrega-nota" id="entregaNota">Elegí tu provincia y código postal para ver el costo. Incluye el seguro del envío.</p>
             </fieldset>
 

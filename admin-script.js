@@ -777,6 +777,9 @@ function renderPedidoModal() {
           <dt>Dirección</dt><dd>${esc(c.direccion)}${c.piso ? `, ${esc(c.piso)}` : ''}</dd>
           <dt>Ciudad</dt><dd>${esc(c.ciudad)}, ${esc(c.provincia)}</dd>
           <dt>CP</dt><dd>${esc(c.cp)}</dd>
+          ${c.entrega === 'sucursal' ? `<dt>Retira en</dt><dd>${c.sucursal
+            ? `Andreani ${esc(c.sucursal.nombre)}<br><span class="muted">${esc(c.sucursal.direccion)}, ${esc(c.sucursal.localidad)} (${esc(c.sucursal.provincia)})</span>`
+            : 'Sucursal a coordinar con el cliente'}</dd>` : ''}
           ${c.mensaje ? `<dt>Mensaje</dt><dd>${esc(c.mensaje)}</dd>` : ''}
         </dl>
         ${p.estado !== 'cancelado' ? `<button type="button" class="btn btn-ghost btn-sm" style="margin-top:10px" data-numero="${esc(p.numero)}" onclick="imprimirEtiquetas([this.dataset.numero])">🏷 Imprimir etiqueta</button>` : ''}

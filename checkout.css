@@ -218,6 +218,43 @@ textarea.form-input { resize: vertical; }
 .entrega-precio { font-weight: 600; color: var(--precio); white-space: nowrap; }
 .entrega-nota { font-size: 0.78rem; color: var(--muted); margin: 0; }
 
+/* Sucursales de Andreani, cuando elige retiro en sucursal */
+.sucursales[hidden] { display: none; }
+.sucursales {
+  padding: 0.9rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}
+.sucursales-titulo { font-size: 0.85rem; font-weight: 600; margin: 0 0 0.6rem; }
+.sucursales-lista { display: grid; gap: 0.4rem; }
+.sucursales-aviso { font-size: 0.8rem; color: var(--muted); margin: 0; line-height: 1.45; }
+.sucursal-opcion {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+.sucursal-opcion:has(input:checked) {
+  border-color: var(--blue);
+  background: rgba(26, 111, 191, 0.08);
+}
+.sucursal-opcion input {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--blue);
+  cursor: pointer;
+}
+.sucursal-opcion span { min-width: 0; }
+.sucursal-opcion strong { display: block; font-size: 0.88rem; }
+.sucursal-opcion small { display: block; font-size: 0.76rem; color: var(--muted); line-height: 1.4; }
+
 .check-legal {
   display: flex;
   align-items: flex-start;

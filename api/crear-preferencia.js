@@ -27,7 +27,7 @@ module.exports = async (req, res) => {
     }
 
     const { cartItems, cliente: datosCliente } = req.body || {};
-    const cliente = validarCliente(datosCliente);
+    const cliente = await validarCliente(datosCliente);
 
     const db = getDb();
     const detalle = await armarDetalle(db, cartItems, cliente);

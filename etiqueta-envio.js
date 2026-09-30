@@ -61,6 +61,9 @@ function htmlEtiqueta(p, capacidad, n, total) {
       </div>
 
       <div class="entrega">${esc(TEXTO_ENTREGA[c.entrega] || 'Envío por Andreani')}</div>
+      ${c.entrega === 'sucursal' ? `<p class="sucursal">${c.sucursal
+        ? `<b>${esc(c.sucursal.nombre)}</b> · ${esc(c.sucursal.direccion)}, ${esc(c.sucursal.localidad)} (${esc(c.sucursal.provincia)})`
+        : 'Sucursal a coordinar con el cliente'}</p>` : ''}
 
       <div class="bloque rem">
         <h2>Remitente</h2>
@@ -109,6 +112,7 @@ const ESTILO_ETIQUETA = `
   .dest .datos { font-size: 9.5pt; margin-top: 1mm; }
   .entrega { background: #000; color: #fff; text-align: center; padding: 2.2mm 2mm;
              font: 14pt/1.1 'Anton', Impact, sans-serif; letter-spacing: 0.4pt; }
+  .sucursal { font-size: 9.5pt; line-height: 1.3; margin-top: -1.5mm; text-align: center; }
   .rem { font-size: 9pt; line-height: 1.35; }
   .pie { margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end;
          padding-top: 2.5mm; border-top: 0.7mm solid #000; }
