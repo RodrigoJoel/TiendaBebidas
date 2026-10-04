@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <!-- PROPUESTA DE DISEÑO (estilo apple.com). Página de muestra: no reemplaza
+       a index.html. Usa los mismos productos, carrito y botellas 3D. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#161617" />
+  <title>Reserva Global Importados — Propuesta de diseño</title>
+  <link rel="icon" href="favicon.ico" sizes="16x16 32x32 48x48" />
+  <link rel="icon" type="image/png" href="icon-192.png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="propuesta-apple.css" />
+  <script>document.documentElement.classList.add('js');</script>
+</head>
+<body data-hero-section="home">
+
+  <!-- ========== NAV ========== -->
+  <header class="gnav" id="gnav">
+    <nav class="gnav-barra" aria-label="Principal">
+      <a href="#" class="gnav-logo" aria-label="Reserva Global Importados, inicio">
+        <img src="logo-emblema.webp" alt="" width="26" height="26" />
+      </a>
+      <ul class="gnav-links">
+        <li><a href="whisky.html">Whisky</a></li>
+        <li><a href="ron.html">Ron</a></li>
+        <li><a href="vodka.html">Vodka</a></li>
+        <li><a href="tequila.html">Tequila</a></li>
+        <li><a href="gin.html">Gin</a></li>
+        <li><a href="licores.html">Licores</a></li>
+        <li><a href="aguardiente.html">Aguardiente</a></li>
+        <li><a href="espumante.html">Espumantes</a></li>
+        <li><a href="cerveza.html">Cervezas</a></li>
+        <li><a href="vino.html">Vinos</a></li>
+        <li><a href="energizante.html">Energizantes</a></li>
+        <li><a href="combos.html">Combos</a></li>
+      </ul>
+      <div class="gnav-acciones">
+        <button type="button" class="gnav-bolsa" onclick="toggleCart()" aria-label="Abrir el carrito">
+          <svg viewBox="0 0 20 24" aria-hidden="true"><path d="M4.4 7.6h11.2l.9 11a1.7 1.7 0 0 1-1.7 1.9H5.2a1.7 1.7 0 0 1-1.7-1.9l.9-11Z"/><path d="M7.2 7.6V6.2a2.8 2.8 0 0 1 5.6 0v1.4"/></svg>
+          <span class="gnav-cuenta" id="cartCount" data-vacio>0</span>
+        </button>
+        <button type="button" class="gnav-menu" id="botonMenu" aria-label="Menú" aria-expanded="false" aria-controls="menu">
+          <span></span><span></span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Menú del celular: pantalla completa -->
+  <div class="menu" id="menu">
+    <ul class="menu-principal">
+      <li><a href="whisky.html" style="--i:0">Whisky</a></li>
+      <li><a href="ron.html" style="--i:1">Ron</a></li>
+      <li><a href="vodka.html" style="--i:2">Vodka</a></li>
+      <li><a href="tequila.html" style="--i:3">Tequila</a></li>
+      <li><a href="gin.html" style="--i:4">Gin</a></li>
+      <li><a href="licores.html" style="--i:5">Licores</a></li>
+      <li><a href="aguardiente.html" style="--i:6">Aguardiente</a></li>
+      <li><a href="espumante.html" style="--i:7">Espumantes</a></li>
+      <li><a href="cerveza.html" style="--i:8">Cervezas</a></li>
+      <li><a href="vino.html" style="--i:9">Vinos</a></li>
+      <li><a href="energizante.html" style="--i:10">Energizantes</a></li>
+      <li><a href="combos.html" style="--i:11">Combos</a></li>
+    </ul>
+    <ul class="menu-secundario">
+      <li><a href="#destacados" style="--i:13">Destacados</a></li>
+      <li><a href="#envios" style="--i:14">Cómo llega tu pedido</a></li>
+      <li><a href="seguimiento.html" style="--i:15">Seguimiento de envío</a></li>
+      <li><a href="preguntas-frecuentes.html" style="--i:16">Preguntas frecuentes</a></li>
+      <li><a href="https://wa.me/5492995000000" target="_blank" rel="noopener" style="--i:17">Escribinos por WhatsApp</a></li>
+    </ul>
+  </div>
+
+  <main>
+
+    <!-- ========== PORTADA ========== -->
+    <section class="tile oscuro portada">
+      <div class="tile-copy">
+        <h1 class="titulo-xl">Reserva Global</h1>
+        <p class="bajada-xl">Tu bodega, a un solo click.</p>
+        <p class="aviso">Bebidas importadas, con envío a todo el país.</p>
+        <div class="ctas">
+          <a href="#destacados" class="boton">Ver destacados</a>
+          <a href="#envios" class="boton boton-borde">Cómo llega</a>
+        </div>
+      </div>
+      <!-- La ronda de botellas 3D (propuesta-apple-ronda.js) -->
+      <div class="ronda" id="heroBotellas"></div>
+    </section>
+
+    <!-- ========== CATEGORÍAS, DE UN VISTAZO ========== -->
+    <nav class="tira" aria-label="Categorías">
+      <ul>
+        <li><a href="whisky.html"><span class="tira-fig"><img src="botellas/whisky.webp" alt="" width="165" height="720" style="--alto:.9" /></span>Whisky</a></li>
+        <li><a href="ron.html"><span class="tira-fig"><img src="botellas/ron.webp" alt="" width="210" height="720" style="--alto:.9" /></span>Ron</a></li>
+        <li><a href="vodka.html"><span class="tira-fig"><img src="botellas/vodka.webp" alt="" width="168" height="720" style="--alto:1" /></span>Vodka</a></li>
+        <li><a href="tequila.html"><span class="tira-fig"><img src="botellas/tequila.webp" alt="" width="155" height="720" style="--alto:1" /></span>Tequila</a></li>
+        <li><a href="gin.html"><span class="tira-fig"><img src="botellas/gin.webp" alt="" width="239" height="720" style="--alto:.84" /></span>Gin</a></li>
+        <li><a href="licores.html"><span class="tira-fig"><img src="botellas/licores.webp" alt="" width="232" height="720" style="--alto:.78" /></span>Licores</a></li>
+        <li><a href="aguardiente.html"><span class="tira-fig"><img src="botellas/aguardiente.webp" alt="" width="321" height="720" style="--alto:.64" /></span>Aguardiente</a></li>
+        <li><a href="espumante.html"><span class="tira-fig"><img src="botellas/espumante.webp" alt="" width="201" height="720" style="--alto:.93" /></span>Espumantes</a></li>
+        <li><a href="cerveza.html"><span class="tira-fig"><img src="botellas/cerveza.webp" alt="" width="182" height="720" style="--alto:.72" /></span>Cervezas</a></li>
+        <li><a href="vino.html"><span class="tira-fig"><img src="botellas/vino.webp" alt="" width="207" height="720" style="--alto:.95" /></span>Vinos</a></li>
+        <li><a href="energizante.html"><span class="tira-fig"><img src="botellas/energizante.webp" alt="" width="257" height="720" style="--alto:.52" /></span>Energizantes</a></li>
+        <li><a href="combos.html"><span class="tira-fig tira-combo"><img src="botellas/monster.webp" alt="" width="283" height="720" style="--alto:.52" /><img src="botellas/greygoose.webp" alt="" width="168" height="720" style="--alto:1" /><img src="botellas/monster.webp" alt="" width="283" height="720" style="--alto:.52" /></span>Combos</a></li>
+      </ul>
+    </nav>
+
+    <!-- ========== DESTACADOS ========== -->
+    <section class="estante" id="destacados">
+      <div class="estante-cabeza">
+        <h2>Destacados. <span>Lo que más se pide.</span></h2>
+        <!-- Las pestañas (Más pedidos, Ofertas) las arma script.js según lo marcado en el panel -->
+        <div class="filter-tabs" id="filterTabs"></div>
+      </div>
+      <div class="products-grid" id="productsGrid"></div>
+      <div class="estante-flechas" id="flechas" hidden>
+        <button type="button" id="flechaAnterior" aria-label="Productos anteriores">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 5.5-6.5 6.5 6.5 6.5"/></svg>
+        </button>
+        <button type="button" id="flechaSiguiente" aria-label="Más productos">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- ========== CATEGORÍAS ========== -->
+    <section class="tiles" id="categorias" aria-label="Categorías">
+
+      <a href="whisky.html" class="tile oscuro tile-ancho rev">
+        <div class="tile-copy">
+          <h2 class="titulo-l">Whisky</h2>
+          <p class="bajada-l">El clásico de toda buena reserva.</p>
+          <span class="boton">Ver whiskies</span>
+        </div>
+        <div class="tile-foto"><img src="botellas/whisky.webp" alt="" width="165" height="720" loading="lazy" /></div>
+      </a>
+
+      <a href="vino.html" class="tile tile-ancho rev">
+        <div class="tile-copy">
+          <h2 class="titulo-l">Vinos</h2>
+          <p class="bajada-l">De la bodega a tu mesa.</p>
+          <span class="boton">Ver vinos</span>
+        </div>
+        <div class="tile-foto"><img src="botellas/vino.webp" alt="" width="207" height="720" loading="lazy" /></div>
+      </a>
+
+      <div class="tiles-grilla">
+        <a href="ron.html" class="tile tile-medio rev">
+          <div class="tile-copy">
+            <h3 class="titulo-m">Ron</h3>
+            <p class="bajada-m">Añejado con paciencia.</p>
+            <span class="enlace">Ver rones</span>
+          </div>
+          <div class="tile-foto"><img src="botellas/ron.webp" alt="" width="210" height="720" loading="lazy" style="--e:.95" /></div>
+        </a>
+        <a href="vodka.html" class="tile oscuro tile-medio rev">
+          <div class="tile-copy">
+            <h3 class="titulo-m">Vodka</h3>
+            <p class="bajada-m">Puro, frío y directo.</p>
+            <span class="enlace">Ver vodkas</span>
+          </div>
+          <div class="tile-foto"><img src="botellas/vodka.webp" alt="" width="168" height="720" loading="lazy" /></div>
+        </a>
+        <a href="tequila.html" class="tile oscuro tile-medio rev">
+          <div class="tile-copy">
+            <h3 class="titulo-m">Tequila</h3>
+            <p class="bajada-m">Agave con carácter.</p>
+            <span class="enlace">Ver tequilas</span>
+          </div>
+          <div class="tile-foto"><img src="botellas/tequila.webp" alt="" width="155" height="720" loading="lazy" /></div>
+        </a>
+        <a href="gin.html" class="tile tile-medio rev">
+          <div class="tile-copy">
+            <h3 class="titulo-m">Gin</h3>
+            <p class="bajada-m">Botánicos para tu próximo tónico.</p>
+            <span class="enlace">Ver gins</span>
+          </div>
+          <div class="tile-foto"><img src="botellas/gin.webp" alt="" width="239" height="720" loading="lazy" style="--e:.9" /></div>
+        </a>
+
+        <a href="licores.html" class="tile oscuro tile-tercio rev">
+          <div class="tile-copy">
+            <h3 class="titulo-m">Licores</h3>
+            <p class="bajada-m">El toque dulce de la sobremesa.</p>
+            <span class="enlace">Ver licores</span>
+          </div>
+          <div class="tile-foto"><img src="botellas/licores.webp" alt="" width="232" height="720" loading="lazy" style="--e:.9" /></div>
+        </a>
+        <a href="espumante.html" class="tile tile-tercio rev">
+          <div class="tile-copy">
+            <h3 class="titulo-m">Espumantes</h3>
+            <p class="bajada-m">Burbujas para brindar.</p>
+            <span class="enlace">Ver espumantes</span>
+          </div>
+          <div class="tile-foto"><img src="botellas/espumante.webp" alt="" width="201" height="720" loading="lazy" /></div>
+        </a>
+        <a href="cerveza.html" class="tile oscuro tile-tercio rev">
+          <div class="tile-copy">
+            <h3 class="titulo-m">Cervezas</h3>
+            <p class="bajada-m">Bien frías, de todo el mundo.</p>
+            <span class="enlace">Ver cervezas</span>
+          </div>
+          <div class="tile-foto"><img src="botellas/cerveza.webp" alt="" width="182" height="720" loading="lazy" style="--e:.84" /></div>
+        </a>
+        <a href="energizante.html" class="tile tile-tercio rev">
+          <div class="tile-copy">
+            <h3 class="titulo-m">Energizantes</h3>
+            <p class="bajada-m">Para que la noche siga.</p>
+            <span class="enlace">Ver energizantes</span>
+          </div>
+          <div class="tile-foto"><img src="botellas/energizante.webp" alt="" width="257" height="720" loading="lazy" style="--e:.66" /></div>
+        </a>
+        <a href="aguardiente.html" class="tile oscuro tile-tercio rev">
+          <div class="tile-copy">
+            <h3 class="titulo-m">Aguardiente</h3>
+            <p class="bajada-m">Tradición destilada.</p>
+            <span class="enlace">Ver aguardientes</span>
+          </div>
+          <div class="tile-foto"><img src="botellas/aguardiente.webp" alt="" width="321" height="720" loading="lazy" style="--e:.76" /></div>
+        </a>
+        <a href="combos.html" class="tile cielo tile-tercio rev">
+          <div class="tile-copy">
+            <h3 class="titulo-m">Combos</h3>
+            <p class="bajada-m">Todo listo para la previa.</p>
+            <span class="enlace">Ver combos</span>
+          </div>
+          <div class="tile-foto tile-combo">
+            <img src="botellas/monster.webp" alt="" width="283" height="720" loading="lazy" style="--e:.54" />
+            <img src="botellas/greygoose.webp" alt="" width="168" height="720" loading="lazy" />
+            <img src="botellas/monster.webp" alt="" width="283" height="720" loading="lazy" style="--e:.54" />
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- ========== ENVÍOS ========== -->
+    <section class="envios" id="envios">
+      <h2 class="titulo-l">Cómo llega tu pedido.</h2>
+      <p class="bajada-l">A tu puerta o a la sucursal de Andreani que elijas, en todo el país.</p>
+      <ol class="pasos">
+        <li class="paso rev" style="--demora:0ms">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.6 8h12.8l1 11.2a1.8 1.8 0 0 1-1.8 2H6.4a1.8 1.8 0 0 1-1.8-2L5.6 8Z"/><path d="M8.8 8V6.6a3.2 3.2 0 0 1 6.4 0V8"/></svg>
+          <div>
+            <span class="paso-n">Paso 1</span>
+            <h3>Elegí tu pedido</h3>
+            <p>Recorré el catálogo y sumá al carrito lo que quieras. Sin mínimo de unidades.</p>
+          </div>
+        </li>
+        <li class="paso rev" style="--demora:70ms">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2.6"/><path d="M2.5 9.6h19M6.5 15h4"/></svg>
+          <div>
+            <span class="paso-n">Paso 2</span>
+            <h3>Pagá seguro</h3>
+            <p>Tarjeta de crédito o débito, Mercado Pago o transferencia.</p>
+          </div>
+        </li>
+        <li class="paso rev" style="--demora:140ms">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.8 8.5 4.2v10L12 21.2 3.5 17V7L12 2.8Z"/><path d="M3.5 7 12 11.2 20.5 7M12 11.2v10"/></svg>
+          <div>
+            <span class="paso-n">Paso 3</span>
+            <h3>Lo preparamos</h3>
+            <p>Cada botella viaja con embalaje especial antigolpes.</p>
+          </div>
+        </li>
+        <li class="paso rev" style="--demora:210ms">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 6.2h11v10.3h-11zM13.5 9.4h4l3 3.3v3.8h-7z"/><circle cx="7" cy="17.6" r="1.9"/><circle cx="17" cy="17.6" r="1.9"/></svg>
+          <div>
+            <span class="paso-n">Paso 4</span>
+            <h3>Lo recibís</h3>
+            <p>En tu puerta o en la sucursal que elijas, con seguimiento del envío.</p>
+          </div>
+        </li>
+      </ol>
+      <p class="envios-enlaces">
+        <a href="seguimiento.html" class="enlace">Seguí tu envío</a>
+        <a href="medios-pago.html" class="enlace">Medios de pago</a>
+      </p>
+    </section>
+
+  </main>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="pie" id="contacto">
+    <div class="pie-interior">
+      <p class="pie-notas"><strong>Beber con moderación. Prohibida su venta a menores de 18 años.</strong> Reserva Global Importados es tu tienda de bebidas online: enviamos a toda Argentina con embalaje de primera.</p>
+      <div class="pie-columnas">
+        <div class="pie-col pie-col-categorias">
+          <h4>Categorías</h4>
+          <ul>
+            <li><a href="whisky.html">Whisky</a></li>
+            <li><a href="ron.html">Ron</a></li>
+            <li><a href="vodka.html">Vodka</a></li>
+            <li><a href="tequila.html">Tequila</a></li>
+            <li><a href="gin.html">Gin</a></li>
+            <li><a href="licores.html">Licores</a></li>
+            <li><a href="aguardiente.html">Aguardiente</a></li>
+            <li><a href="espumante.html">Espumantes</a></li>
+            <li><a href="cerveza.html">Cervezas</a></li>
+            <li><a href="vino.html">Vinos</a></li>
+            <li><a href="energizante.html">Energizantes</a></li>
+            <li><a href="combos.html">Combos</a></li>
+          </ul>
+        </div>
+        <div class="pie-col">
+          <h4>Ayuda</h4>
+          <ul>
+            <li><a href="#envios">¿Cómo comprar?</a></li>
+            <li><a href="seguimiento.html">Seguimiento de envío</a></li>
+            <li><a href="cambios-devoluciones.html">Cambios y devoluciones</a></li>
+            <li><a href="medios-pago.html">Medios de pago</a></li>
+            <li><a href="https://wa.me/5492995000000" target="_blank" rel="noopener">Contacto por WhatsApp</a></li>
+          </ul>
+        </div>
+        <div class="pie-col">
+          <h4>Legal</h4>
+          <ul>
+            <li><a href="terminos.html">Términos y condiciones</a></li>
+            <li><a href="privacidad.html">Política de privacidad</a></li>
+            <li><a href="preguntas-frecuentes.html">Preguntas frecuentes</a></li>
+            <li><a href="https://www.argentina.gob.ar/produccion/defensadelconsumidor/formulario" target="_blank" rel="noopener">Defensa de las y los Consumidores. Para reclamos ingrese aquí</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="pie-legal">
+        <p>© 2026 Reserva Global Importados</p>
+        <p>Visa, Mastercard, Mercado Pago y transferencia</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========== CARRITO ========== -->
+  <div class="overlay" id="overlay" onclick="toggleCart()"></div>
+  <aside class="cart-drawer" id="cartDrawer" aria-label="Carrito">
+    <div class="cart-head">
+      <h3>Tu carrito</h3>
+      <button type="button" class="btn-close" onclick="toggleCart()" aria-label="Cerrar el carrito">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 6.5 11 11M17.5 6.5l-11 11"/></svg>
+      </button>
+    </div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-footer">
+      <div class="cart-total">
+        <span>Total estimado</span>
+        <strong id="cartTotal">$0</strong>
+      </div>
+      <button type="button" class="btn-checkout" id="checkoutBtn" onclick="irACheckout()" disabled>Finalizar pedido</button>
+    </div>
+  </aside>
+
+  <!-- ========== WHATSAPP ========== -->
+  <a class="whatsapp-float" href="https://wa.me/5492995000000" target="_blank" rel="noopener" aria-label="Consultas por WhatsApp">
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <circle cx="16" cy="16" r="15" fill="#25D366"/>
+      <path fill="#fff" d="M23.35 8.6A10.35 10.35 0 0 0 16 5.55c-5.73 0-10.4 4.66-10.4 10.4 0 1.83.48 3.62 1.39 5.2L5.52 26.4l5.37-1.41a10.4 10.4 0 0 0 5.1 1.34h.01c5.73 0 10.4-4.67 10.4-10.4 0-2.78-1.08-5.39-3.05-7.33Zm-7.35 15.98h-.01a8.63 8.63 0 0 1-4.4-1.2l-.32-.19-3.19.84.85-3.11-.21-.32a8.62 8.62 0 1 1 7.28 3.98Zm4.73-6.46c-.26-.13-1.53-.76-1.77-.85-.24-.09-.41-.13-.58.13-.17.26-.66.85-.81 1.03-.15.17-.3.2-.56.07-.26-.13-1.07-.39-2.04-1.24-.75-.67-1.25-1.5-1.4-1.76-.15-.26-.02-.4.11-.53.12-.12.26-.3.39-.45.13-.15.17-.26.26-.43.09-.17.04-.32-.02-.45-.06-.13-.58-1.4-.8-1.92-.21-.5-.42-.43-.58-.44h-.49c-.17 0-.45.06-.69.32-.24.26-.9.88-.9 2.15s.92 2.49 1.05 2.66c.13.17 1.81 2.76 4.39 3.87.61.26 1.09.42 1.46.54.61.19 1.17.16 1.61.1.49-.07 1.53-.63 1.75-1.23.22-.6.22-1.11.15-1.23-.06-.11-.24-.17-.5-.3Z"/>
+    </svg>
+  </a>
+
+  <script type="module" src="script.js"></script>
+  <script type="module" src="propuesta-apple.js"></script>
+  <script type="module" src="propuesta-apple-ronda.js"></script>
+</body>
+</html>
