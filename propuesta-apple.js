@@ -1,8 +1,9 @@
 // ============================================================
 //  PROPUESTA DE DISEÑO — estilo apple.com
-//  Lo propio de la página de muestra: menú del celular, el numerito
-//  del carrito, las flechas de la fila de destacados y la aparición de
-//  cada bloque al llegar. Productos y carrito los maneja script.js.
+//  Lo propio de las páginas de muestra (inicio y secciones): menú del
+//  celular, el numerito del carrito, las flechas de la fila de
+//  destacados y la aparición de cada bloque al llegar. Productos y
+//  carrito los manejan script.js (inicio) y categoria.js (secciones).
 // ============================================================
 
 const raiz = document.documentElement;
@@ -35,7 +36,7 @@ window.matchMedia('(min-width: 900px)').addEventListener('change', (ev) => {
 });
 
 // ---------- Carrito ----------
-// script.js abre y cierra el cajón con la clase "open".
+// script.js y categoria.js abren y cierran el cajón con la clase "open".
 cajon.inert = true;
 new MutationObserver(() => {
   const abierto = cajon.classList.contains('open');
@@ -57,33 +58,36 @@ new MutationObserver(marcarCuenta).observe(cuenta, { childList: true, characterD
 marcarCuenta();
 
 // ---------- Fila de destacados ----------
+// Solo está en el inicio: en las secciones los productos van en grilla.
 const fila = document.getElementById('productsGrid');
 const flechas = document.getElementById('flechas');
-const anterior = document.getElementById('flechaAnterior');
-const siguiente = document.getElementById('flechaSiguiente');
+if (fila && flechas) {
+  const anterior = document.getElementById('flechaAnterior');
+  const siguiente = document.getElementById('flechaSiguiente');
 
-function actualizarFlechas() {
-  const max = fila.scrollWidth - fila.clientWidth;
-  flechas.hidden = max < 4;
-  anterior.disabled = fila.scrollLeft < 4;
-  siguiente.disabled = fila.scrollLeft > max - 4;
+  const actualizarFlechas = () => {
+    const max = fila.scrollWidth - fila.clientWidth;
+    flechas.hidden = max < 4;
+    anterior.disabled = fila.scrollLeft < 4;
+    siguiente.disabled = fila.scrollLeft > max - 4;
+  };
+  // Avanza de a las tarjetas que entran enteras en pantalla.
+  const paso = () => {
+    const tarjeta = fila.querySelector('.prod-card');
+    if (!tarjeta) return fila.clientWidth;
+    const ancho = tarjeta.getBoundingClientRect().width + parseFloat(getComputedStyle(fila).columnGap || 0);
+    const libre = fila.clientWidth - 2 * parseFloat(getComputedStyle(fila).paddingLeft || 0);
+    return ancho * Math.max(1, Math.floor(libre / ancho));
+  };
+  anterior.addEventListener('click', () => fila.scrollBy({ left: -paso(), behavior: 'smooth' }));
+  siguiente.addEventListener('click', () => fila.scrollBy({ left: paso(), behavior: 'smooth' }));
+  fila.addEventListener('scroll', actualizarFlechas, { passive: true });
+  new MutationObserver(() => {
+    fila.scrollLeft = 0;
+    actualizarFlechas();
+  }).observe(fila, { childList: true });
+  new ResizeObserver(actualizarFlechas).observe(fila);
 }
-// Avanza de a las tarjetas que entran enteras en pantalla.
-function paso() {
-  const tarjeta = fila.querySelector('.prod-card');
-  if (!tarjeta) return fila.clientWidth;
-  const ancho = tarjeta.getBoundingClientRect().width + parseFloat(getComputedStyle(fila).columnGap || 0);
-  const libre = fila.clientWidth - 2 * parseFloat(getComputedStyle(fila).paddingLeft || 0);
-  return ancho * Math.max(1, Math.floor(libre / ancho));
-}
-anterior.addEventListener('click', () => fila.scrollBy({ left: -paso(), behavior: 'smooth' }));
-siguiente.addEventListener('click', () => fila.scrollBy({ left: paso(), behavior: 'smooth' }));
-fila.addEventListener('scroll', actualizarFlechas, { passive: true });
-new MutationObserver(() => {
-  fila.scrollLeft = 0;
-  actualizarFlechas();
-}).observe(fila, { childList: true });
-new ResizeObserver(actualizarFlechas).observe(fila);
 
 // ---------- Aparecer al llegar ----------
 const vistos = new IntersectionObserver(

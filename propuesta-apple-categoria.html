@@ -2,9 +2,11 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <!-- PROPUESTA DE DISEÑO (estilo apple.com). Página de muestra: no reemplaza
-       a index.html. Usa los mismos productos, carrito y botellas 3D.
-       Las secciones de la muestra están en propuesta-apple-categoria.html. -->
+  <!-- PROPUESTA DE DISEÑO (estilo apple.com) — CÓMO SE VERÍA UNA SECCIÓN.
+       Página de muestra: una sola plantilla sirve a las doce secciones
+       según la dirección (?c=whisky, ?c=ron, ...). No reemplaza a
+       whisky.html ni a las demás. Usa categoria.js y la botella 3D tal
+       cual están hoy. -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex" />
   <meta name="theme-color" content="#161617" />
@@ -18,7 +20,33 @@
   <link rel="stylesheet" href="propuesta-apple.css" />
   <script>document.documentElement.classList.add('js');</script>
 </head>
-<body data-hero-section="home">
+<body>
+  <script>
+    // Qué sección mostrar. Nombre, frase y texto son los que cada sección
+    // ya tiene hoy en su página.
+    var SECCIONES = {
+      whisky: { nombre: 'Whisky', categoria: 'Whisky', emoji: '🥃', frase: 'Para exigentes.', todos: 'Todos los whiskies.', buscar: "Ej: Jack Daniel's, Macallan...", texto: 'Las mejores etiquetas de Escocia, Japón, USA, Argentina y más. Desde blends hasta single malt de colección.' },
+      ron: { nombre: 'Ron', categoria: 'Ron', emoji: '🍹', frase: 'Al ritmo tropical.', todos: 'Todos los rones.', buscar: 'Ej: Bacardí, Havana Club...', texto: 'Las mejores etiquetas de Cuba, Puerto Rico, República Dominicana y más. Desde blancos hasta añejos premium.' },
+      vodka: { nombre: 'Vodka', categoria: 'Vodka', emoji: '🍸', frase: 'Puro y helado.', todos: 'Todos los vodkas.', buscar: 'Ej: Absolut, Smirnoff...', texto: 'Las destilerías más prestigiosas de Rusia, Polonia, Suecia y más. Desde clásicos hasta ediciones premium.' },
+      tequila: { nombre: 'Tequila', categoria: 'Tequila', emoji: '🌵', frase: 'Con carácter.', todos: 'Todos los tequilas.', buscar: 'Ej: Don Julio, José Cuervo...', texto: 'Blanco, reposado y añejo directo de Jalisco, México. 100% agave para los más exigentes.' },
+      gin: { nombre: 'Gin', categoria: 'Gin', emoji: '🍈', frase: 'Para tu coctelería.', todos: 'Todos los gins.', buscar: 'Ej: Bombay, Tanqueray...', texto: 'London Dry, Premium y de autor. El botánico perfecto para tu gin tonic.' },
+      licores: { nombre: 'Licores', categoria: 'Licores', emoji: '🥂', frase: 'Para brindar.', todos: 'Todos los licores.', buscar: 'Ej: Baileys, Amaretto...', texto: 'Amaretto, Baileys, Cointreau y más. El toque dulce y aromático para tus tragos, postres y sobremesa.' },
+      aguardiente: { nombre: 'Aguardiente', categoria: 'Aguardiente', emoji: '🥃', frase: 'Tradición y sabor.', todos: 'Todos los aguardientes.', buscar: 'Ej: Cepita, Legui...', texto: 'Los aguardientes más elegidos de la región, para brindar como se debe.' },
+      espumante: { nombre: 'Espumantes', categoria: 'Espumante', emoji: '🍾', frase: 'Para brindar.', todos: 'Todos los espumantes.', buscar: 'Ej: Chandon, Baron B...', texto: 'Champagnes, espumantes y extra brut de las mejores bodegas para cada celebración.' },
+      cerveza: { nombre: 'Cervezas', categoria: 'Cerveza', emoji: '🍺', frase: 'Artesanales y más.', todos: 'Todas las cervezas.', buscar: 'Ej: Quilmes, Patagonia...', texto: 'Rubias, negras, IPA y artesanales de todo el país y del mundo.' },
+      vino: { nombre: 'Vinos', categoria: 'Vino', emoji: '🍷', frase: 'De autor.', todos: 'Todos los vinos.', buscar: 'Ej: Catena Zapata, Rutini...', texto: 'Malbec, Cabernet, Chardonnay y más de las mejores bodegas argentinas e importadas.' },
+      energizante: { nombre: 'Energizantes', categoria: 'Energizante', emoji: '⚡', frase: 'Para no parar.', todos: 'Todos los energizantes.', buscar: 'Ej: Red Bull, Speed...', texto: 'Las marcas más elegidas para acompañar tu noche o tu rutina.' },
+      combos: { nombre: 'Combos', categoria: 'Combos', emoji: '📦', frase: 'Armados para vos.', todos: 'Todos los combos.', buscar: 'Ej: Pack Whisky + Vermut...', texto: 'Packs armados con las mejores combinaciones para regalar o disfrutar. Más variedad, mejor precio.' }
+    };
+    var clave = new URLSearchParams(location.search).get('c');
+    if (!SECCIONES[clave]) clave = 'whisky';
+    var seccion = SECCIONES[clave];
+    // categoria.js y botella-categoria.js leen estos datos del <body>.
+    document.body.dataset.heroSection = clave;
+    document.body.dataset.categoria = seccion.categoria;
+    document.body.dataset.emoji = seccion.emoji;
+    document.title = seccion.nombre + ' · Reserva Global Importados — Propuesta de diseño';
+  </script>
 
   <!-- ========== NAV ========== -->
   <header class="gnav" id="gnav">
@@ -69,7 +97,7 @@
       <li><a href="propuesta-apple-categoria.html?c=combos" style="--i:11">Combos</a></li>
     </ul>
     <ul class="menu-secundario">
-      <li><a href="#destacados" style="--i:13">Destacados</a></li>
+      <li><a href="propuesta-apple.html" style="--i:13">Inicio</a></li>
       <li><a href="#envios" style="--i:14">Cómo llega tu pedido</a></li>
       <li><a href="seguimiento.html" style="--i:15">Seguimiento de envío</a></li>
       <li><a href="preguntas-frecuentes.html" style="--i:16">Preguntas frecuentes</a></li>
@@ -79,23 +107,8 @@
 
   <main>
 
-    <!-- ========== PORTADA ========== -->
-    <section class="tile oscuro portada">
-      <div class="tile-copy">
-        <h1 class="titulo-xl">Reserva Global</h1>
-        <p class="bajada-xl">Tu bodega, a un solo click.</p>
-        <p class="aviso">Bebidas importadas, con envío a todo el país.</p>
-        <div class="ctas">
-          <a href="#destacados" class="boton">Ver destacados</a>
-          <a href="#envios" class="boton boton-borde">Cómo llega</a>
-        </div>
-      </div>
-      <!-- La ronda de botellas 3D (propuesta-apple-ronda.js) -->
-      <div class="ronda" id="heroBotellas"></div>
-    </section>
-
-    <!-- ========== CATEGORÍAS, DE UN VISTAZO ========== -->
-    <nav class="tira" aria-label="Categorías">
+    <!-- ========== LAS DOCE SECCIONES, PARA PASAR DE UNA A OTRA ========== -->
+    <nav class="tira tira-arriba" id="tira" aria-label="Categorías">
       <ul>
         <li><a href="propuesta-apple-categoria.html?c=whisky"><span class="tira-fig"><img src="botellas/whisky.webp" alt="" width="165" height="720" style="--alto:.9" /></span>Whisky</a></li>
         <li><a href="propuesta-apple-categoria.html?c=ron"><span class="tira-fig"><img src="botellas/ron.webp" alt="" width="210" height="720" style="--alto:.9" /></span>Ron</a></li>
@@ -112,131 +125,65 @@
       </ul>
     </nav>
 
-    <!-- ========== DESTACADOS ========== -->
-    <section class="estante" id="destacados">
-      <div class="cabeza">
-        <h2>Destacados. <span>Lo que más se pide.</span></h2>
-        <!-- Las pestañas (Más pedidos, Ofertas) las arma script.js según lo marcado en el panel -->
-        <div class="filter-tabs" id="filterTabs"></div>
-      </div>
-      <div class="products-grid" id="productsGrid"></div>
-      <div class="estante-flechas" id="flechas" hidden>
-        <button type="button" id="flechaAnterior" aria-label="Productos anteriores">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.5 5.5-6.5 6.5 6.5 6.5"/></svg>
-        </button>
-        <button type="button" id="flechaSiguiente" aria-label="Más productos">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 5.5 6.5 6.5-6.5 6.5"/></svg>
-        </button>
+    <!-- ========== ENCABEZADO DE LA SECCIÓN ==========
+         La botella 3D (botella-categoria.js) se ubica sola a la derecha del texto. -->
+    <section class="hero" id="hero">
+      <div class="hero-interior">
+        <h1><span id="heroTitulo"></span></h1>
+        <p class="hero-frase" id="heroFrase"></p>
+        <p class="hero-sub" id="heroTexto"></p>
       </div>
     </section>
 
-    <!-- ========== CATEGORÍAS ==========
-         Las doce van iguales: mismo tamaño, nombre, frase, botón y botella. -->
-    <section class="categorias" id="categorias">
-      <div class="cabeza">
-        <h2>Todo en bebidas. <span>Elegí por dónde empezar.</span></h2>
-      </div>
-      <div class="cats">
-        <a href="propuesta-apple-categoria.html?c=whisky" class="tile cat rev">
-          <div class="tile-copy">
-            <h3 class="titulo-m">Whisky</h3>
-            <p class="bajada-m">Para exigentes.</p>
-            <span class="boton boton-s">Ver whiskies</span>
+    <!-- ========== PRODUCTOS + FILTROS ========== -->
+    <section class="catalogo" id="productos">
+      <div class="products-layout">
+
+        <aside class="filter-sidebar">
+          <label class="buscador">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>
+            <input type="search" id="searchInput" class="search-input" aria-label="Buscar en esta sección" enterkeyhint="search" oninput="applyFilters()" />
+          </label>
+
+          <button type="button" class="filter-toggle" id="filterToggle" onclick="toggleFiltros()" aria-expanded="false" aria-controls="filterPanel">Filtrar por marca y tamaño</button>
+
+          <div class="filter-panel" id="filterPanel">
+            <div class="filter-group">
+              <h4>Marca</h4>
+              <div id="brandFilter" class="filter-options"></div>
+              <button type="button" class="btn-show-more" id="brandShowMore" onclick="toggleBrands()">Ver más</button>
+            </div>
+            <div class="filter-group">
+              <h4>Tamaño</h4>
+              <div id="sizeFilter" class="filter-options"></div>
+              <button type="button" class="btn-show-more" id="sizeShowMore" onclick="toggleSizes()">Ver más</button>
+            </div>
+            <button type="button" class="btn-filter-reset" onclick="resetFilters()">Quitar filtros</button>
           </div>
-          <div class="tile-foto"><img src="botellas/whisky.webp" alt="" width="165" height="720" loading="lazy" /></div>
-        </a>
-        <a href="propuesta-apple-categoria.html?c=ron" class="tile cat rev">
-          <div class="tile-copy">
-            <h3 class="titulo-m">Ron</h3>
-            <p class="bajada-m">Al ritmo tropical.</p>
-            <span class="boton boton-s">Ver rones</span>
+        </aside>
+
+        <div class="products-main">
+          <div class="catalogo-cabeza">
+            <div>
+              <h2 id="catalogoTitulo"></h2>
+              <p class="products-counter" id="productsCounter">Mostrando 0 productos</p>
+            </div>
+            <div class="filter-tabs" id="filterTabs">
+              <button type="button" class="tab active" onclick="sortProducts('destacados')">Destacados</button>
+              <button type="button" class="tab" onclick="sortProducts('precio-menor')">Precio ↑</button>
+              <button type="button" class="tab" onclick="sortProducts('precio-mayor')">Precio ↓</button>
+            </div>
           </div>
-          <div class="tile-foto"><img src="botellas/ron.webp" alt="" width="210" height="720" loading="lazy" style="--e:.95" /></div>
-        </a>
-        <a href="propuesta-apple-categoria.html?c=vodka" class="tile cat cat-cristal rev">
-          <div class="tile-copy">
-            <h3 class="titulo-m">Vodka</h3>
-            <p class="bajada-m">Puro y helado.</p>
-            <span class="boton boton-s">Ver vodkas</span>
+
+          <div class="products-grid" id="productsGrid"></div>
+
+          <div class="pagination" id="pagination">
+            <button type="button" class="page-btn" id="prevPage" onclick="changePage(-1)">Anterior</button>
+            <span class="page-info" id="pageInfo">Página 1 de 1</span>
+            <button type="button" class="page-btn" id="nextPage" onclick="changePage(1)">Siguiente</button>
           </div>
-          <div class="tile-foto"><img src="botellas/vodka.webp" alt="" width="168" height="720" loading="lazy" /></div>
-        </a>
-        <a href="propuesta-apple-categoria.html?c=tequila" class="tile cat rev">
-          <div class="tile-copy">
-            <h3 class="titulo-m">Tequila</h3>
-            <p class="bajada-m">Con carácter.</p>
-            <span class="boton boton-s">Ver tequilas</span>
-          </div>
-          <div class="tile-foto"><img src="botellas/tequila.webp" alt="" width="155" height="720" loading="lazy" /></div>
-        </a>
-        <a href="propuesta-apple-categoria.html?c=gin" class="tile cat rev">
-          <div class="tile-copy">
-            <h3 class="titulo-m">Gin</h3>
-            <p class="bajada-m">Para tu coctelería.</p>
-            <span class="boton boton-s">Ver gins</span>
-          </div>
-          <div class="tile-foto"><img src="botellas/gin.webp" alt="" width="239" height="720" loading="lazy" style="--e:.9" /></div>
-        </a>
-        <a href="propuesta-apple-categoria.html?c=licores" class="tile cat rev">
-          <div class="tile-copy">
-            <h3 class="titulo-m">Licores</h3>
-            <p class="bajada-m">Para brindar.</p>
-            <span class="boton boton-s">Ver licores</span>
-          </div>
-          <div class="tile-foto"><img src="botellas/licores.webp" alt="" width="232" height="720" loading="lazy" style="--e:.9" /></div>
-        </a>
-        <a href="propuesta-apple-categoria.html?c=aguardiente" class="tile cat cat-cristal rev">
-          <div class="tile-copy">
-            <h3 class="titulo-m">Aguardiente</h3>
-            <p class="bajada-m">Tradición y sabor.</p>
-            <span class="boton boton-s">Ver aguardientes</span>
-          </div>
-          <div class="tile-foto"><img src="botellas/aguardiente.webp" alt="" width="321" height="720" loading="lazy" style="--e:.76" /></div>
-        </a>
-        <a href="propuesta-apple-categoria.html?c=espumante" class="tile cat rev">
-          <div class="tile-copy">
-            <h3 class="titulo-m">Espumantes</h3>
-            <p class="bajada-m">Para brindar.</p>
-            <span class="boton boton-s">Ver espumantes</span>
-          </div>
-          <div class="tile-foto"><img src="botellas/espumante.webp" alt="" width="201" height="720" loading="lazy" /></div>
-        </a>
-        <a href="propuesta-apple-categoria.html?c=cerveza" class="tile cat rev">
-          <div class="tile-copy">
-            <h3 class="titulo-m">Cervezas</h3>
-            <p class="bajada-m">Artesanales y más.</p>
-            <span class="boton boton-s">Ver cervezas</span>
-          </div>
-          <div class="tile-foto"><img src="botellas/cerveza.webp" alt="" width="182" height="720" loading="lazy" style="--e:.84" /></div>
-        </a>
-        <a href="propuesta-apple-categoria.html?c=vino" class="tile cat rev">
-          <div class="tile-copy">
-            <h3 class="titulo-m">Vinos</h3>
-            <p class="bajada-m">De autor.</p>
-            <span class="boton boton-s">Ver vinos</span>
-          </div>
-          <div class="tile-foto"><img src="botellas/vino.webp" alt="" width="207" height="720" loading="lazy" /></div>
-        </a>
-        <a href="propuesta-apple-categoria.html?c=energizante" class="tile cat rev">
-          <div class="tile-copy">
-            <h3 class="titulo-m">Energizantes</h3>
-            <p class="bajada-m">Para no parar.</p>
-            <span class="boton boton-s">Ver energizantes</span>
-          </div>
-          <div class="tile-foto"><img src="botellas/energizante.webp" alt="" width="257" height="720" loading="lazy" style="--e:.66" /></div>
-        </a>
-        <a href="propuesta-apple-categoria.html?c=combos" class="tile cat cat-combo rev">
-          <div class="tile-copy">
-            <h3 class="titulo-m">Combos</h3>
-            <p class="bajada-m">Armados para vos.</p>
-            <span class="boton boton-s">Ver combos</span>
-          </div>
-          <div class="tile-foto">
-            <img src="botellas/monster.webp" alt="" width="283" height="720" loading="lazy" style="--e:.54" />
-            <img src="botellas/greygoose.webp" alt="" width="168" height="720" loading="lazy" />
-            <img src="botellas/monster.webp" alt="" width="283" height="720" loading="lazy" style="--e:.54" />
-          </div>
-        </a>
+        </div>
+
       </div>
     </section>
 
@@ -249,32 +196,32 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.6 8h12.8l1 11.2a1.8 1.8 0 0 1-1.8 2H6.4a1.8 1.8 0 0 1-1.8-2L5.6 8Z"/><path d="M8.8 8V6.6a3.2 3.2 0 0 1 6.4 0V8"/></svg>
           <div>
             <span class="paso-n">Paso 1</span>
-            <h3>Elegí tu pedido</h3>
-            <p>Recorré el catálogo y sumá al carrito lo que quieras. Sin mínimo de unidades.</p>
+            <h3>Elegí</h3>
+            <p>Sin mínimo de unidades.</p>
           </div>
         </li>
         <li class="paso rev" style="--demora:70ms">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2.6"/><path d="M2.5 9.6h19M6.5 15h4"/></svg>
           <div>
             <span class="paso-n">Paso 2</span>
-            <h3>Pagá seguro</h3>
-            <p>Tarjeta de crédito o débito, Mercado Pago o transferencia.</p>
+            <h3>Pagá</h3>
+            <p>Tarjeta, transferencia o Mercado Pago.</p>
           </div>
         </li>
         <li class="paso rev" style="--demora:140ms">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.8 8.5 4.2v10L12 21.2 3.5 17V7L12 2.8Z"/><path d="M3.5 7 12 11.2 20.5 7M12 11.2v10"/></svg>
           <div>
             <span class="paso-n">Paso 3</span>
-            <h3>Lo preparamos</h3>
-            <p>Cada botella viaja con embalaje especial antigolpes.</p>
+            <h3>Preparamos</h3>
+            <p>Embalaje antigolpes.</p>
           </div>
         </li>
         <li class="paso rev" style="--demora:210ms">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 6.2h11v10.3h-11zM13.5 9.4h4l3 3.3v3.8h-7z"/><circle cx="7" cy="17.6" r="1.9"/><circle cx="17" cy="17.6" r="1.9"/></svg>
           <div>
             <span class="paso-n">Paso 4</span>
-            <h3>Lo recibís</h3>
-            <p>En tu puerta o en la sucursal que elijas, con seguimiento del envío.</p>
+            <h3>Recibís</h3>
+            <p>En tu puerta o en la sucursal que elijas.</p>
           </div>
         </li>
       </ol>
@@ -335,6 +282,15 @@
     </div>
   </footer>
 
+  <!-- ========== DETALLE DEL PRODUCTO ========== -->
+  <div class="overlay" id="modalOverlay" onclick="closeProductModal()"></div>
+  <div class="product-modal" id="productModal" role="dialog" aria-modal="true" aria-label="Detalle del producto">
+    <button type="button" class="modal-close" onclick="closeProductModal()" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6.5 6.5 11 11M17.5 6.5l-11 11"/></svg>
+    </button>
+    <div class="modal-content" id="productModalBody"></div>
+  </div>
+
   <!-- ========== CARRITO ========== -->
   <div class="overlay" id="overlay" onclick="toggleCart()"></div>
   <aside class="cart-drawer" id="cartDrawer" aria-label="Carrito">
@@ -362,8 +318,25 @@
     </svg>
   </a>
 
-  <script type="module" src="script.js"></script>
+  <script>
+    // Completa los textos de la sección y marca cuál es la actual.
+    document.getElementById('heroTitulo').textContent = seccion.nombre;
+    document.getElementById('heroFrase').textContent = seccion.frase;
+    document.getElementById('heroTexto').textContent = seccion.texto;
+    document.getElementById('catalogoTitulo').textContent = seccion.todos;
+    document.getElementById('searchInput').placeholder = seccion.buscar;
+    document.querySelectorAll('a[href$="?c=' + clave + '"]').forEach(function (a) {
+      a.setAttribute('aria-current', 'page');
+    });
+    // En el celular la tira arranca con la sección actual a la vista.
+    (function () {
+      var lista = document.querySelector('#tira ul');
+      var actual = lista.querySelector('[aria-current]');
+      if (actual) lista.scrollLeft = actual.offsetLeft - (lista.clientWidth - actual.offsetWidth) / 2;
+    })();
+  </script>
+  <script type="module" src="categoria.js"></script>
   <script type="module" src="propuesta-apple.js"></script>
-  <script type="module" src="propuesta-apple-ronda.js"></script>
+  <script type="module" src="botella-categoria.js"></script>
 </body>
 </html>

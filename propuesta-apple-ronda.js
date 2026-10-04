@@ -50,6 +50,8 @@ async function iniciar() {
     return contenedor.remove();
   }
   const { THREE, gsap, renderer, escena, botellas } = base;
+  // En la muestra, cada botella lleva a su sección con el diseño nuevo.
+  botellas.forEach((b) => (b.pagina = `propuesta-apple-categoria.html?c=${b.clave}`));
 
   const lienzo = renderer.domElement;
   contenedor.appendChild(lienzo);
