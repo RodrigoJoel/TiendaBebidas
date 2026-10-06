@@ -75,8 +75,13 @@ window.previewImg = previewImg;
 // ─────────────────────────────────────────────
 const LADO_MAXIMO_FOTO = { productos: 1000, carruseles: 1600 };
 
+// Propia: está en el almacenamiento de la tienda o dentro del sitio
+// (p. ej. fotos/whisky.webp).
 function esFotoPropia(url) {
-  try { return new URL(url).hostname.endsWith('.public.blob.vercel-storage.com'); } catch { return false; }
+  try {
+    const u = new URL(url, location.href);
+    return u.origin === location.origin || u.hostname.endsWith('.public.blob.vercel-storage.com');
+  } catch { return false; }
 }
 
 async function tokenAdmin() {
@@ -182,7 +187,7 @@ window.elegirFoto = elegirFoto;
 
 // Fotos que todavía están en otros sitios: las de los productos y las de
 // los carruseles (si una sección no tiene fotos cargadas, el sitio usa
-// las de referencia, que también están afuera).
+// las de referencia, que ya están dentro del sitio y no cuentan).
 function fotosCarrusel(key) {
   const cargadas = window.DATA.carousels?.[key]?.images || [];
   return cargadas.length ? cargadas : (window.CAROUSEL_DEFAULTS?.[key] || []);
