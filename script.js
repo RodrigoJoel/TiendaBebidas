@@ -25,6 +25,15 @@ function isActive(product) {
   return product.active !== false;
 }
 
+// La compra online llega hasta el stock cargado en el panel. Quien
+// quiere más unidades lo coordina por WhatsApp.
+const WHATSAPP_NUMERO = '5492995000000';
+
+function linkMasUnidades(nombre) {
+  const mensaje = `Hola, quiero comprar más unidades de ${nombre}. ¿Cómo coordinamos?`;
+  return `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`;
+}
+
 // ============================================================
 //  PRODUCTOS DESDE FIRESTORE
 // ============================================================
@@ -215,7 +224,9 @@ function renderCartItems() {
     return;
   }
 
-  el.innerHTML = items.map(i => `
+  el.innerHTML = items.map(i => {
+    const enTope = i.stock !== null && i.stock !== undefined && i.qty >= Number(i.stock);
+    return `
     <div class="cart-item">
       <div class="cart-item-img">${i.image ? `<img src="${i.image}" alt="" style="width:100%;height:100%;object-fit:contain;">` : i.emoji}</div>
       <div class="cart-item-info">
@@ -224,11 +235,13 @@ function renderCartItems() {
         <div class="cart-item-qty">
           <button class="qty-btn" onclick="changeQty('${i.id}', -1)">−</button>
           <span class="qty-val">${i.qty}</span>
-          <button class="qty-btn" onclick="changeQty('${i.id}', 1)">+</button>
+          <button class="qty-btn" ${enTope ? 'disabled' : ''} onclick="changeQty('${i.id}', 1)">+</button>
         </div>
+        ${enTope ? `<div class="cart-item-tope">Es el máximo para comprar online. ¿Querés más? <a href="${linkMasUnidades(i.name)}" target="_blank" rel="noopener">Coordinalo por WhatsApp</a></div>` : ''}
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function toggleCart() {

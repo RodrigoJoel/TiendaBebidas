@@ -25,6 +25,15 @@ function formatPrice(n) {
   return '$' + Number(n || 0).toLocaleString('es-AR');
 }
 
+// La compra online llega hasta el stock cargado en el panel. Quien
+// quiere más unidades lo coordina por WhatsApp.
+const WHATSAPP_NUMERO = '5492995000000';
+
+function linkMasUnidades(nombre) {
+  const mensaje = `Hola, quiero comprar más unidades de ${nombre}. ¿Cómo coordinamos?`;
+  return `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`;
+}
+
 // ============================================================
 //  PRODUCTOS DESDE FIRESTORE
 // ============================================================
@@ -299,7 +308,9 @@ function openProductModal(id) {
   const body = document.getElementById('productModalBody');
   if (!body) return;
 
-  const sinStock = prod.stock !== null && prod.stock !== undefined && Number(prod.stock) <= 0;
+  const limitado = prod.stock !== null && prod.stock !== undefined;
+  const sinStock = limitado && Number(prod.stock) <= 0;
+  const tope = Number(prod.stock);
 
   body.innerHTML = `
     <div class="modal-img">
@@ -321,6 +332,7 @@ function openProductModal(id) {
         </div>
         <button class="btn-add" id="modalAddBtn" ${sinStock ? 'disabled' : ''} onclick="addToCartFromModal('${prod.id}')">${sinStock ? 'Sin stock' : 'Agregar al carrito'}</button>
       </div>
+      ${limitado && !sinStock ? `<p class="modal-mas-unidades">Podés comprar hasta ${tope} ${tope === 1 ? 'unidad' : 'unidades'} online. ¿Querés más? <a href="${linkMasUnidades(prod.name)}" target="_blank" rel="noopener">Coordinalo por WhatsApp</a></p>` : ''}
     </div>
   `;
 
@@ -333,7 +345,7 @@ function addToCartFromModal(id) {
   const agregado = addToCart(id);
   const btn = document.getElementById('modalAddBtn');
   if (btn) {
-    btn.textContent = agregado ? 'Agregado' : 'No hay más stock';
+    btn.textContent = agregado ? 'Agregado' : 'Máximo alcanzado';
     setTimeout(() => { btn.textContent = 'Agregar al carrito'; }, 900);
   }
 }
@@ -451,7 +463,9 @@ function renderCartItems() {
     return;
   }
 
-  el.innerHTML = items.map(i => `
+  el.innerHTML = items.map(i => {
+    const enTope = i.stock !== null && i.stock !== undefined && i.qty >= Number(i.stock);
+    return `
     <div class="cart-item">
       <div class="cart-item-img">${i.image ? `<img src="${i.image}" alt="" style="width:100%;height:100%;object-fit:contain;">` : i.emoji}</div>
       <div class="cart-item-info">
@@ -460,11 +474,13 @@ function renderCartItems() {
         <div class="cart-item-qty">
           <button class="qty-btn" onclick="changeQty('${i.id}', -1)">−</button>
           <span class="qty-val">${i.qty}</span>
-          <button class="qty-btn" onclick="changeQty('${i.id}', 1)">+</button>
+          <button class="qty-btn" ${enTope ? 'disabled' : ''} onclick="changeQty('${i.id}', 1)">+</button>
         </div>
+        ${enTope ? `<div class="cart-item-tope">Es el máximo para comprar online. ¿Querés más? <a href="${linkMasUnidades(i.name)}" target="_blank" rel="noopener">Coordinalo por WhatsApp</a></div>` : ''}
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function toggleCart() {

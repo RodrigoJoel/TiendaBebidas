@@ -169,6 +169,34 @@ html[data-theme="light"] .prod-img {
   color: var(--precio);
   margin-top: 0.2rem;
 }
+/* Aviso de que se llegó al máximo que se puede comprar online, con el
+   link para coordinar más unidades por WhatsApp (carrito y ficha) */
+.cart-item-tope,
+.modal-mas-unidades {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.cart-item-tope {
+  margin-top: 0.45rem;
+}
+.modal-mas-unidades {
+  margin-top: 0.9rem;
+}
+.cart-item-tope a,
+.modal-mas-unidades a {
+  color: var(--precio);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.qty-btn:disabled,
+.qty-btn:disabled:hover {
+  background: var(--card);
+  border-color: var(--border);
+  opacity: 0.35;
+  cursor: not-allowed;
+}
 .cart-total {
   align-items: baseline;
 }
