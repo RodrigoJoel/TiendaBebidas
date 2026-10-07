@@ -697,7 +697,13 @@ function avisoPedido(p) {
     case 'revisar_pago':
       return `<div class="order-note alert">⚠️ ${esc(p.motivoRevision || 'Revisá el pago antes de enviar.')}</div>`;
     case 'esperando_transferencia':
-      return `<div class="order-note info">Cuando te llegue la transferencia de <strong>${fmt(p.total)}</strong> (el cliente manda el comprobante por WhatsApp), marcalo como pagado. Si no paga, cancelalo y el stock vuelve a estar disponible.</div>`;
+      return `<div class="order-note info">Cuando te llegue la transferencia de <strong>${fmt(p.total)}</strong> (el cliente manda el comprobante por WhatsApp), marcalo como pagado. ${p.venceEn
+        ? `Si no lo marcás, se cancela solo después del <strong>${esc(fechaHora(p.venceEn))}</strong> y el stock vuelve a estar disponible.`
+        : 'Si no paga, cancelalo y el stock vuelve a estar disponible.'}</div>`;
+    case 'cancelado':
+      return p.motivoCancelacion === 'vencido'
+        ? `<div class="order-note info">Se canceló solo: pasó el plazo sin que se marcara como pagado. El stock volvió a estar disponible y al cliente se le avisó por mail.</div>`
+        : '';
     case 'pendiente_pago':
       return `<div class="order-note info">El cliente fue a pagar con Mercado Pago pero el pago todavía no se aprobó. Si se aprueba, el pedido pasa solo a "Pagado". Si quedó abandonado, podés cancelarlo (no reservó stock).</div>`;
     case 'pagado':

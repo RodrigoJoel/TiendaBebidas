@@ -12,6 +12,11 @@ const { buscarSucursal } = require('./sucursales');
 
 const MAX_UNIDADES_POR_PRODUCTO = 50;
 
+// Un pedido por transferencia reserva stock al crearse. Si en este
+// plazo no se marcó como pagado, se cancela solo (vencimientos.js).
+// El plazo también está escrito en checkout.html y medios-pago.html.
+const HORAS_PARA_TRANSFERIR = 48;
+
 const PROVINCIAS = [
   'Buenos Aires', 'CABA', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba',
   'Corrientes', 'Entre Ríos', 'Formosa', 'Jujuy', 'La Pampa', 'La Rioja',
@@ -209,6 +214,21 @@ async function descontarStock(tx, db, items) {
   return { descontado, faltante };
 }
 
+// Devuelve al stock lo que un pedido había descontado, igual que al
+// cancelarlo desde el panel: si el producto se borró o pasó a stock
+// ilimitado, no se toca. Llamarla después de las demás lecturas.
+async function reponerStock(tx, db, descontado) {
+  if (!descontado.length) return;
+  const refs = descontado.map(d => db.collection('productos').doc(d.id));
+  const snaps = await tx.getAll(...refs);
+
+  snaps.forEach((snap, n) => {
+    const stock = snap.exists ? leerStock(snap.data()) : null;
+    if (stock === null) return;
+    tx.update(refs[n], { stock: stock + (Number(descontado[n].cantidad) || 0) });
+  });
+}
+
 // ============================================================
 //  GUARDADO
 // ============================================================
@@ -241,10 +261,12 @@ function responderError(res, err, mensajeGenerico) {
 }
 
 module.exports = {
+  HORAS_PARA_TRANSFERIR,
   ErrorPedido,
   validarCliente,
   armarDetalle,
   descontarStock,
+  reponerStock,
   generarNumeroPedido,
   guardarPedido,
   responderError

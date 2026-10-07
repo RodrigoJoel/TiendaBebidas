@@ -7,10 +7,12 @@
 //
 //  El stock se reserva al crear el pedido (en la misma transacción),
 //  así nadie más compra esas unidades mientras el cliente transfiere.
-//  Si el pedido se cancela desde el panel, el stock se repone.
+//  Si el pedido se cancela desde el panel, o vence sin pagarse
+//  (venceEn, ver _lib/vencimientos.js), el stock se repone.
 // ============================================================
+const { Timestamp } = require('firebase-admin/firestore');
 const { getDb } = require('./_lib/firebase-admin');
-const { validarCliente, armarDetalle, descontarStock, generarNumeroPedido, guardarPedido, responderError } = require('./_lib/pedidos');
+const { HORAS_PARA_TRANSFERIR, validarCliente, armarDetalle, descontarStock, generarNumeroPedido, guardarPedido, responderError } = require('./_lib/pedidos');
 const { enviarMailsDePedido } = require('./_lib/mail');
 
 module.exports = async (req, res) => {
@@ -35,7 +37,8 @@ module.exports = async (req, res) => {
         medioPago: 'transferencia',
         cliente,
         ...detalle,
-        stockDescontado: descontado
+        stockDescontado: descontado,
+        venceEn: Timestamp.fromMillis(Date.now() + HORAS_PARA_TRANSFERIR * 60 * 60 * 1000)
       };
       guardarPedido(db, nuevo, tx);
       return nuevo;
@@ -43,7 +46,7 @@ module.exports = async (req, res) => {
 
     await enviarMailsDePedido(pedido);
 
-    res.status(200).json({ numero: pedido.numero, total: pedido.total });
+    res.status(200).json({ numero: pedido.numero, total: pedido.total, venceEn: pedido.venceEn.toMillis() });
   } catch (err) {
     responderError(res, err, 'No pudimos registrar el pedido. Intentá de nuevo en unos segundos.');
   }

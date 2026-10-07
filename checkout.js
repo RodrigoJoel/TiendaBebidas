@@ -543,6 +543,16 @@ async function confirmarPagoMercadoPago(paymentId, numeroUrl) {
 // ============================================================
 //  PAGO (Transferencia bancaria)
 // ============================================================
+// Hasta cuándo se puede transferir (lo fija el servidor al crear el
+// pedido). Ej.: "jueves 8/10 a las 14:30".
+function fechaLimite(venceEn) {
+  const d = new Date(venceEn);
+  const dia = d.toLocaleDateString('es-AR', { weekday: 'long' });
+  const fecha = d.toLocaleDateString('es-AR', { day: 'numeric', month: 'numeric' });
+  const hora = d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+  return `${dia} ${fecha} a las ${hora}`;
+}
+
 async function confirmarTransferencia() {
   if (!validarDatosAntesDePagar()) return;
 
@@ -583,7 +593,7 @@ async function confirmarTransferencia() {
     titulo: '¡Pedido registrado!',
     numero: pedido.numero,
     texto: ['Transferí el total a la cuenta de abajo y mandanos el comprobante por WhatsApp. También te enviamos estos datos a ', { fuerte: cliente.email }, '.'],
-    nota: 'Tu pedido queda pendiente hasta que verifiquemos la transferencia.'
+    nota: `Tu pedido queda pendiente hasta que verifiquemos la transferencia. Tenés tiempo hasta el ${fechaLimite(pedido.venceEn)}; pasado ese plazo, se cancela.`
   });
 
   vaciarCarrito();

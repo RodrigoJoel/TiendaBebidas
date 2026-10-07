@@ -9,6 +9,7 @@
 //  "Reserva Global Importados" desde la casilla de SMTP_USER.
 // ============================================================
 const nodemailer = require('nodemailer');
+const { HORAS_PARA_TRANSFERIR } = require('./pedidos');
 
 const NOMBRE_REMITENTE = 'Reserva Global Importados';
 // A quién le llega el aviso de cada pedido nuevo (el admin de la tienda).
@@ -153,6 +154,17 @@ function linkWhatsapp(texto) {
   return `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(texto)}`;
 }
 
+// Hasta cuándo se puede transferir, en hora de Argentina (el servidor
+// corre en UTC). Ej.: "jueves 8/10 a las 14:30".
+function fechaLimite(venceEn) {
+  const zona = { timeZone: 'America/Argentina/Buenos_Aires' };
+  const d = venceEn.toDate();
+  const dia = d.toLocaleDateString('es-AR', { ...zona, weekday: 'long' });
+  const fecha = d.toLocaleDateString('es-AR', { ...zona, day: 'numeric', month: 'numeric' });
+  const hora = d.toLocaleTimeString('es-AR', { ...zona, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+  return `${dia} ${fecha} a las ${hora}`;
+}
+
 // ============================================================
 //  AVISO AL DUEÑO: pedido nuevo con todos los datos para enviarlo
 // ============================================================
@@ -210,6 +222,7 @@ async function confirmarAlCliente(pedido) {
     ? `
       <h2 style="color:#0a3560;">¡Gracias por tu pedido, ${esc(primerNombre)}!</h2>
       <p>Recibimos tu pedido <strong>${esc(pedido.numero)}</strong>. Para confirmarlo, transferí el total y mandanos el comprobante por WhatsApp.</p>
+      <p>Tenés tiempo hasta el <strong>${esc(fechaLimite(pedido.venceEn))}</strong>. Pasado ese plazo, el pedido se cancela y los productos vuelven a estar a la venta.</p>
       ${tablaItems(pedido)}
       <h3 style="color:#0a3560; margin-bottom:0;">Datos para transferir</h3>
       ${tablaDatos([
@@ -250,4 +263,66 @@ async function enviarMailsDePedido(pedido, { alCliente = true } = {}) {
   });
 }
 
-module.exports = { enviarMailsDePedido };
+// ============================================================
+//  PEDIDOS POR TRANSFERENCIA QUE VENCIERON SIN PAGARSE
+// ============================================================
+async function avisarVencimientoAlCliente(pedido) {
+  const primerNombre = pedido.cliente.nombre.split(' ')[0];
+
+  const html = plantilla(`
+    <h2 style="color:#0a3560;">Tu pedido se canceló, ${esc(primerNombre)}</h2>
+    <p>Pasaron ${HORAS_PARA_TRANSFERIR} horas y no registramos la transferencia del pedido <strong>${esc(pedido.numero)}</strong>, así que lo cancelamos. No tenés que hacer nada.</p>
+    ${tablaItems(pedido)}
+    <p><strong>¿Ya habías transferido?</strong> Mandanos el comprobante por WhatsApp y lo resolvemos.</p>
+    <p>
+      <a href="${linkWhatsapp(`Hola! Ya transferí el pedido ${pedido.numero} y me llegó el aviso de que se canceló. Te mando el comprobante.`)}"
+         style="display:inline-block; background:#25D366; color:#fff; padding:10px 18px; border-radius:24px; text-decoration:none; font-weight:bold;">
+        Enviar comprobante por WhatsApp
+      </a>
+    </p>
+    <p>Si todavía querés los productos, podés hacer el pedido de nuevo desde la tienda.</p>
+  `);
+
+  return enviarMail({
+    to: pedido.cliente.email,
+    subject: `Tu pedido ${pedido.numero} se canceló · Reserva Global Importados`,
+    html
+  });
+}
+
+async function avisarVencidosAlDueno(pedidos) {
+  const filas = pedidos.map(p => `
+    <tr style="border-top:1px solid #ddd;">
+      <td style="padding:6px 12px 6px 0; white-space:nowrap;"><strong>${esc(p.numero)}</strong></td>
+      <td style="padding:6px 12px 6px 0;">${esc(p.cliente.nombre)} · ${esc(p.cliente.celular)}</td>
+      <td style="padding:6px 0; text-align:right; white-space:nowrap;">${precio(p.total)}</td>
+    </tr>
+  `).join('');
+
+  const html = plantilla(`
+    <h2 style="color:#0a3560;">Pedidos cancelados por falta de pago</h2>
+    <p>Pasaron ${HORAS_PARA_TRANSFERIR} horas sin que se marcaran como pagados. El stock ya volvió a estar disponible y a cada cliente le avisamos por mail.</p>
+    <table style="width:100%; border-collapse:collapse; margin:1rem 0;">${filas}</table>
+    <p>Si alguno sí te había transferido, escribile: un pedido cancelado no se puede reactivar, hay que hacerlo de nuevo.</p>
+  `);
+
+  return enviarMail({
+    to: process.env.AVISO_PEDIDOS_EMAIL || AVISO_PEDIDOS_DEFAULT,
+    subject: pedidos.length === 1
+      ? `Se canceló el pedido ${pedidos[0].numero} por falta de pago`
+      : `Se cancelaron ${pedidos.length} pedidos por falta de pago`,
+    html
+  });
+}
+
+async function enviarMailsDeVencimiento(pedidos) {
+  const resultados = await Promise.allSettled([
+    avisarVencidosAlDueno(pedidos),
+    ...pedidos.map(avisarVencimientoAlCliente)
+  ]);
+  resultados.forEach(r => {
+    if (r.status === 'rejected') console.error('No se pudo enviar un aviso de vencimiento:', r.reason);
+  });
+}
+
+module.exports = { enviarMailsDePedido, enviarMailsDeVencimiento };

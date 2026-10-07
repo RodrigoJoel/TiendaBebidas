@@ -163,6 +163,7 @@ pedidos/
 - **Transferencia:** se descuenta al crear el pedido (queda reservado mientras el cliente transfiere).
 - **Mercado Pago:** se descuenta cuando se aprueba el pago. Si mientras tanto se agotó, se descuenta lo que haya (nunca queda negativo) y el pedido pasa a `revisar_pago`.
 - **Cancelar** desde el panel repone lo descontado. Los productos con stock ilimitado (vacío) no se tocan.
+- **Transferencias que no se pagan:** cada pedido guarda hasta cuándo se puede pagar (`venceEn`, 48 horas desde que se crea). Si llega esa fecha y no se marcó como pagado, se cancela solo, se repone el stock y se avisa por mail al cliente y al dueño. La revisión corre una vez por día, así que puede seguir abierto hasta un día después de vencer.
 - Todo se hace en transacciones de Firestore: dos compras al mismo tiempo no se pueden llevar la misma unidad.
 
 ### Flujo y funciones
@@ -172,6 +173,7 @@ pedidos/
 - `api/confirmar-pago.js`: cuando Mercado Pago devuelve al cliente al checkout, verifica el pago con Mercado Pago.
 - `api/webhook-mercadopago.js`: Mercado Pago avisa cada pago acá, aunque el cliente cierre la pestaña. No hace falta configurar nada en el panel de Mercado Pago: la dirección va en cada link de pago. Opcionalmente se puede cargar `MP_WEBHOOK_SECRET` para exigir la firma.
 - Las dos últimas usan la misma lógica (`api/_lib/pagos.js`): si el pago está aprobado, descuentan el stock, marcan el pedido `pagado` y mandan los mails. Da igual cuál llegue primero; nada se repite.
+- `api/vencer-pedidos.js`: cancela las transferencias vencidas (`api/_lib/vencimientos.js`). La llama Vercel todos los días a las 9:00 de Argentina (`vercel.json`). El plazo es `HORAS_PARA_TRANSFERIR` en `api/_lib/pedidos.js`; si se cambia, hay que cambiar también el texto de `checkout.html` y `medios-pago.html`. Opcionalmente se puede cargar `CRON_SECRET` (cualquier texto largo al azar) para que solo Vercel pueda llamarla.
 - `api/_lib/`: código común (Firebase Admin, validaciones, stock, pagos, mails). Vercel no publica como endpoint lo que empieza con `_`.
 
 ### Panel de administración
